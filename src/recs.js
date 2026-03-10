@@ -19,11 +19,11 @@ function showTemplateHelp() {
 
 export async function initTemplate(options) {
 	const { context } = options;
-	const { searchspring } = context;
+	const { integration } = context;
 	const [command, ...nameArgs] = options.args;
 	const nameArg = nameArgs.join(' ');
 
-	if (!searchspring || !context.project.path) {
+	if (!integration || !context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		return;
 	}
@@ -31,7 +31,7 @@ export async function initTemplate(options) {
 	// fetch library contents
 	const library = await buildLibrary(options);
 
-	if (!searchspring.framework || !library[searchspring.framework]) {
+	if (!integration.framework || !library[integration.framework]) {
 		console.log(chalk.red(`Error: No path specified and unknown Snap framework.`));
 		return;
 	}
@@ -41,7 +41,7 @@ export async function initTemplate(options) {
 		return;
 	}
 
-	const framework = library[searchspring.framework];
+	const framework = library[integration.framework];
 
 	if (!framework?.components?.recommendation) {
 		console.log(chalk.red(`Error: Library does not contain recommendation components.`));
@@ -60,7 +60,7 @@ export async function initTemplate(options) {
 	]);
 
 	const type = answers1.type;
-	const componentOptions = library[searchspring.framework].components.recommendation[type];
+	const componentOptions = library[integration.framework].components.recommendation[type];
 	let answers2;
 	const keys = Object.keys(componentOptions);
 	if (keys.length > 1) {
@@ -239,10 +239,10 @@ export async function initTemplate(options) {
 
 export async function listTemplates(options) {
 	const { context } = options;
-	const { searchspring, repository } = context;
+	const { integration, repository } = context;
 	const [command, location] = options.args;
 
-	if (!searchspring || !context.project || !context.project.path) {
+	if (!integration || !context.project || !context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		return;
 	}
@@ -325,7 +325,7 @@ export async function listTemplates(options) {
 				}
 			} else {
 				const { secretKey } = options.options;
-				await list(secretKey, options.context.searchspring.siteId, options.context.repository.name);
+				await list(secretKey, options.context.integration.siteId, options.context.repository.name);
 			}
 
 			if (smcManaged) {
@@ -339,10 +339,10 @@ export async function listTemplates(options) {
 
 export async function removeTemplate(options) {
 	const { context } = options;
-	const { searchspring, repository } = context;
+	const { integration, repository } = context;
 	const [command, templateName, branch] = options.args;
 
-	if (!searchspring || !context.project || !context.project.path) {
+	if (!integration || !context.project || !context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		return;
 	}
@@ -388,17 +388,17 @@ export async function removeTemplate(options) {
 	} else {
 		const { secretKey } = options.options;
 		console.log(`${chalk.white.bold(`${repository.name}`)}`);
-		await remove(secretKey, options.context.searchspring.siteId);
+		await remove(secretKey, options.context.integration.siteId);
 	}
 }
 
 export async function syncTemplate(options) {
 	const { context } = options;
-	const { searchspring, repository } = context;
+	const { integration, repository } = context;
 	const [command, templateName, branch] = options.args;
 	const { secretKey } = options.options;
 
-	if (!searchspring || !context.project || !context.project.path) {
+	if (!integration || !context.project || !context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		return;
 	}
@@ -468,7 +468,7 @@ ${invalidParam}
 			console.log(chalk.grey(`\n\tsnapfu secrets add\n`));
 			return;
 		}
-		const payload = buildTemplatePayload(template.details, { branch: branchName, framework: searchspring.framework });
+		const payload = buildTemplatePayload(template.details, { branch: branchName, framework: integration.framework });
 
 		if (payload.name && !payload.name.match(/^[a-zA-Z0-9_-]*$/)) {
 			console.log(chalk.red(`Error: Template name must be an alphanumeric string (underscore and dashes also supported).`));
@@ -507,7 +507,7 @@ ${invalidParam}
 		for (let i = 0; i < syncTemplates.length; i++) {
 			const template = syncTemplates[i];
 			console.log(`    synchronizing template ${i + 1} of ${syncTemplates.length}`);
-			await sync(template, secretKey, options.context.searchspring.siteId);
+			await sync(template, secretKey, options.context.integration.siteId);
 		}
 	}
 }

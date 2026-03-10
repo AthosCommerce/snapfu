@@ -240,15 +240,14 @@ describe('setupPatchRepo function', () => {
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework: 'preact',
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
 				},
-				projectVersion: '0.0.1',
 			},
 			dev: false,
 			command: 'patch',
@@ -276,15 +275,14 @@ describe('getVersions function', () => {
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework,
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
 				},
-				projectVersion: '0.0.1',
 			},
 			dev: false,
 			command: 'patch',
@@ -310,24 +308,23 @@ describe('getVersions function', () => {
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework,
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.100.2',
 					path: projectDir,
 				},
-				projectVersion: '0.100.2',
 			},
 			dev: false,
 			command: 'patch',
 			args: ['list'],
 		};
 
-		const versions = await getVersions(options, options.context.projectVersion);
+		const versions = await getVersions(options, options.context.project.version);
 		const sortedMockVersions = mockPatches[framework].sort(cmp);
-		const startVersionIndex = mockPatches[framework].indexOf(options.context.projectVersion);
+		const startVersionIndex = mockPatches[framework].indexOf(options.context.project.version);
 		const trimmedMockVersions = sortedMockVersions.slice(startVersionIndex + 1);
 		expect(versions).toStrictEqual(trimmedMockVersions);
 	});
@@ -345,24 +342,23 @@ describe('getVersions function', () => {
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework,
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.100.2',
 					path: projectDir,
 				},
-				projectVersion: '0.100.2',
 			},
 			dev: false,
 			command: 'patch',
 			args: ['list'],
 		};
 
-		const versions = await getVersions(options, undefined, options.context.projectVersion);
+		const versions = await getVersions(options, undefined, options.context.project.version);
 		const sortedMockVersions = mockPatches[framework].sort(cmp);
-		const endVersionIndex = mockPatches[framework].indexOf(options.context.projectVersion);
+		const endVersionIndex = mockPatches[framework].indexOf(options.context.project.version);
 		const trimmedMockVersions = sortedMockVersions.slice(0, endVersionIndex + 1);
 
 		expect(versions).toStrictEqual(trimmedMockVersions);
@@ -381,15 +377,14 @@ describe('getVersions function', () => {
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework,
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.100.2',
 					path: projectDir,
 				},
-				projectVersion: '0.100.2',
 			},
 			dev: false,
 			command: 'patch',
@@ -397,9 +392,9 @@ describe('getVersions function', () => {
 		};
 
 		const endVersion = '0.101.0';
-		const versions = await getVersions(options, options.context.projectVersion, endVersion);
+		const versions = await getVersions(options, options.context.project.version, endVersion);
 		const sortedMockVersions = mockPatches[framework].sort(cmp);
-		const startVersionIndex = mockPatches[framework].indexOf(options.context.projectVersion);
+		const startVersionIndex = mockPatches[framework].indexOf(options.context.project.version);
 		const endVersionIndex = mockPatches[framework].indexOf(endVersion);
 		const trimmedMockVersions = sortedMockVersions.slice(startVersionIndex + 1, endVersionIndex + 1);
 
@@ -424,15 +419,14 @@ describe('listPatches', () => {
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework: 'preact',
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
 				},
-				projectVersion: '0.0.1',
 			},
 			options: {
 				ci: true,
@@ -471,15 +465,15 @@ describe('applyPatches', () => {
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework: 'preact',
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
+					org: 'searchspring',
 				},
-				projectVersion: '0.0.1',
 			},
 			options: {
 				ci: true,
@@ -511,15 +505,15 @@ describe('applyPatches', () => {
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework: 'preact',
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
+					org: 'searchspring',
 				},
-				projectVersion: '0.0.1',
 			},
 			options: {
 				ci: true,
@@ -555,16 +549,16 @@ describe('applyPatches', () => {
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework: 'preact',
 					distribution: 'templates',
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
+					org: 'searchspring',
 				},
-				projectVersion: '0.0.1',
 			},
 			options: {
 				ci: true,

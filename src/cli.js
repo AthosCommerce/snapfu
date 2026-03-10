@@ -53,7 +53,7 @@ async function parseArgumentsIntoOptions(rawArgs) {
 
 	let secretKey;
 	try {
-		secretKey = args['--secret-key'] || user.keys[context.searchspring.siteId];
+		secretKey = args['--secret-key'] || user.keys[context.integration.siteId];
 	} catch (e) {
 		// do nothing - when running init context may not exist
 	}
@@ -85,19 +85,17 @@ async function parseArgumentsIntoOptions(rawArgs) {
 		}
 	};
 
-	if (context.searchspring && typeof context.searchspring.siteId === 'object') {
-		// searchsoring.siteId contains multiple sites
-
-		const siteIds = Object.keys(context.searchspring.siteId);
+	if (context.integration && typeof context.integration.siteId === 'object') {
+		const siteIds = Object.keys(context.integration.siteId);
 		if (!siteIds || !siteIds.length) {
-			console.log(chalk.red('searchspring.siteId object in package.json is empty'));
+			console.log(chalk.red('siteId is empty in package.json object: ', JSON.stringify(context.integration)));
 			exit(1);
 		}
 
 		multipleSites = siteIds
 			.map((siteId) => {
 				try {
-					const { name } = context.searchspring.siteId[siteId];
+					const { name } = context.integration.siteId[siteId];
 					const secretKey = getSecretKeyFromCLI(siteId) || user.keys[siteId];
 
 					if (!secretKey && args['--secrets-ci']) {
@@ -132,7 +130,7 @@ jobs:
 						secretKey,
 					};
 				} catch (e) {
-					console.log(chalk.red('The searchspring.siteId object in package.json is invalid. Expected format:'));
+					console.log(chalk.red('The siteId object in package.json is invalid. Expected format:', JSON.stringify(context.integration)));
 					console.log(
 						chalk.red(`
 "searchspring": {

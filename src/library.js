@@ -64,14 +64,14 @@ export const buildLibrary = async (options) => {
 	*/
 
 	const { context } = options;
-	const { searchspring } = context;
+	const { integration } = context;
 
-	if (!searchspring || !context.project.path) {
+	if (!integration || !context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		return;
 	}
 
-	const { framework } = searchspring || {};
+	const { framework } = integration || {};
 
 	// ~/.searchspring/snapfu-library/{framework}
 	const frameworkPath = path.join(options.config.library.dir, framework);

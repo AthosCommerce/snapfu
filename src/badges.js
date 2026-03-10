@@ -15,11 +15,11 @@ export const ROOT_LOCATIONS = ['left', 'right', 'callout'];
 
 export async function initBadgeTemplate(options) {
 	const { context } = options;
-	const { searchspring } = context;
+	const { integration } = context;
 	const [command, ...nameArgs] = options.args;
 	const nameArg = nameArgs.join(' ');
 
-	if (!searchspring || !context.project.path) {
+	if (!integration || !context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		return;
 	}
@@ -27,7 +27,7 @@ export async function initBadgeTemplate(options) {
 	// fetch library contents
 	const library = await buildLibrary(options);
 
-	if (!searchspring.framework || !library[searchspring.framework]) {
+	if (!integration.framework || !library[integration.framework]) {
 		console.log(chalk.red(`Error: No path specified and unknown Snap framework.`));
 		return;
 	}
@@ -37,7 +37,7 @@ export async function initBadgeTemplate(options) {
 		return;
 	}
 
-	const framework = library[searchspring.framework];
+	const framework = library[integration.framework];
 
 	if (!framework?.components?.badge) {
 		console.log(chalk.red(`Error: Library does not contain badge components.`));
@@ -56,7 +56,7 @@ export async function initBadgeTemplate(options) {
 	]);
 
 	const type = answers1.type;
-	const componentOptions = library[searchspring.framework].components.badge[type];
+	const componentOptions = library[integration.framework].components.badge[type];
 	let answers2;
 	const keys = Object.keys(componentOptions);
 	if (keys.length > 1) {
@@ -189,10 +189,10 @@ export async function initBadgeTemplate(options) {
 
 export async function listBadgeTemplates(options) {
 	const { context } = options;
-	const { searchspring, repository } = context;
+	const { integration, repository } = context;
 	const [command, location] = options.args;
 
-	if (!searchspring || !context.project || !context.project.path) {
+	if (!integration || !context.project || !context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		return;
 	}
@@ -286,7 +286,7 @@ export async function listBadgeTemplates(options) {
 				}
 			} else {
 				const { secretKey } = options.options;
-				await list(secretKey, options.context.searchspring.siteId, options.context.repository.name);
+				await list(secretKey, options.context.integration.siteId, options.context.repository.name);
 				await wait(500);
 			}
 		} catch (err) {
@@ -297,10 +297,10 @@ export async function listBadgeTemplates(options) {
 
 export async function removeBadgeTemplate(options) {
 	const { context } = options;
-	const { searchspring, repository } = context;
+	const { integration, repository } = context;
 	const [command, templateName] = options.args;
 
-	if (!searchspring || !context.project || !context.project.path) {
+	if (!integration || !context.project || !context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		return;
 	}
@@ -345,7 +345,7 @@ export async function removeBadgeTemplate(options) {
 	} else {
 		const { secretKey } = options.options;
 		console.log(`${chalk.white.bold(`${repository.name}`)}`);
-		await remove(secretKey, options.context.searchspring.siteId);
+		await remove(secretKey, options.context.integration.siteId);
 		await wait(500);
 	}
 }
@@ -744,11 +744,11 @@ export function validateTemplate(template, locations) {
 
 export async function syncBadgeTemplate(options) {
 	const { context } = options;
-	const { searchspring, repository } = context;
+	const { integration, repository } = context;
 	const [_, templateName] = options.args;
 	const { secretKey } = options.options;
 
-	if (!searchspring || !context.project || !context.project.path) {
+	if (!integration || !context.project || !context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		return;
 	}
@@ -892,13 +892,13 @@ export async function syncBadgeTemplate(options) {
 	} else {
 		console.log(`${chalk.white.bold(`${repository.name}`)}`);
 		if ((locations && !templateName) || templateName == LOCATIONS_FILE) {
-			await syncLocations(secretKey, options.context.searchspring.siteId);
+			await syncLocations(secretKey, options.context.integration.siteId);
 			await wait(1000);
 		}
 		for (let i = 0; i < syncTemplates.length; i++) {
 			const template = syncTemplates[i];
 			console.log(`    synchronizing template ${i + 1} of ${syncTemplates.length}`);
-			await sync(template, secretKey, options.context.searchspring.siteId);
+			await sync(template, secretKey, options.context.integration.siteId);
 			await wait(500);
 		}
 	}

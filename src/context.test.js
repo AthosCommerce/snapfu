@@ -60,11 +60,6 @@ describe('getClosest function', () => {
 });
 
 describe('getProject function', () => {
-	it('finds the nearest project file from process.cwd()', async () => {
-		const project = getProject();
-		expect(project).toBeDefined();
-	});
-
 	it('returns the parsed json file and adds a "project" attribute', async () => {
 		// assumes Javascript when there is no index.ts file found
 		const project = await getProject(projectDir);
@@ -113,10 +108,59 @@ describe('getProject function', () => {
 
 describe('getContext function', () => {
 	it('makes available context data', async () => {
-		const context = await getContext();
+		const context = await getContext(projectDir);
 		expect(context).toHaveProperty('project');
+		expect(context.project).toHaveProperty('org');
+		expect(context.project.org).toBe('searchspring');
 		expect(context).toHaveProperty('repository');
-		expect(context).toHaveProperty('searchspring');
-		expect(context).toHaveProperty('projectVersion');
+		expect(context).toHaveProperty('integration');
+		expect(context.project).toHaveProperty('version');
+	});
+	it('makes available context data for athos siteId', async () => {
+		const mockPackageJSON = {
+			athos: {
+				siteId: 'at1234',
+				framework: 'preact',
+				platform: 'bigcommerce',
+				tags: ['finder'],
+			},
+		};
+		await fsp.writeFile(packagePath, JSON.stringify(mockPackageJSON));
+
+		const context = await getContext(projectDir);
+		console.log(context);
+		expect(context).toHaveProperty('project');
+		expect(context.project).toHaveProperty('org');
+		expect(context.project.org).toBe('athos');
+		expect(context).toHaveProperty('repository');
+		expect(context).toHaveProperty('integration');
+		expect(context.project).toHaveProperty('version');
+	});
+	it('makes available context data for athos siteId with multiple siteIds', async () => {
+		const mockPackageJSON = {
+			athos: {
+				siteId: {
+					at1234: {
+						name: 'example1.com',
+					},
+					at5678: {
+						name: 'example2.com',
+					},
+				},
+				framework: 'preact',
+				platform: 'bigcommerce',
+				tags: ['finder'],
+			},
+		};
+		await fsp.writeFile(packagePath, JSON.stringify(mockPackageJSON));
+
+		const context = await getContext(projectDir);
+		console.log(context);
+		expect(context).toHaveProperty('project');
+		expect(context.project).toHaveProperty('org');
+		expect(context.project.org).toBe('athos');
+		expect(context).toHaveProperty('repository');
+		expect(context).toHaveProperty('integration');
+		expect(context.project).toHaveProperty('version');
 	});
 });

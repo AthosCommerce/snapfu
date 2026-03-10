@@ -7,14 +7,14 @@ import { auth } from './login.js';
 import { wait } from './utils/index.js';
 
 export const setSecretKey = async (options) => {
-	if (!options.context || !options.context.searchspring || !options.context.project || !options.context.project.path) {
+	if (!options.context || !options.context.integration || !options.context.project || !options.context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		exit(1);
 	}
 
 	let siteIds;
-	if (typeof options.context.searchspring.siteId === 'object') {
-		siteIds = Object.keys(options.context.searchspring.siteId);
+	if (typeof options.context.integration.siteId === 'object') {
+		siteIds = Object.keys(options.context.integration.siteId);
 	}
 	const questions = [
 		{
@@ -40,7 +40,7 @@ export const setSecretKey = async (options) => {
 	console.log();
 
 	const { secretKey } = answers;
-	const siteId = answers.siteId || options.context.searchspring.siteId;
+	const siteId = answers.siteId || options.context.integration.siteId;
 	const { organization, name } = options.context.repository;
 
 	if (!siteId || !organization || !name) {
@@ -66,13 +66,13 @@ export const setSecretKey = async (options) => {
 };
 
 export const checkSecretKey = async (options) => {
-	if (!options.context || !options.context.searchspring || !options.context.project || !options.context.project.path) {
+	if (!options.context || !options.context.integration || !options.context.project || !options.context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		exit(1);
 	}
 
 	const keys = options.user.keys || {};
-	let siteId = options.context.searchspring.siteId;
+	let siteId = options.context.integration.siteId;
 	let name = options.context.repository.name;
 
 	const verify = async (secretKey, siteId, name) => {

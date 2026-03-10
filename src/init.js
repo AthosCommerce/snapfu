@@ -63,11 +63,20 @@ export const init = async (options) => {
 			});
 		}
 
-		const fetchScaffoldRepos = async () => {
+		const fetchScaffoldRepos = async ({ organization }) => {
 			// using search modifiers - https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories
 			const searchOrgs = orgs
 				.concat(user.login)
 				.concat('searchspring')
+				.concat('snap-implementations')
+				.filter((org) => {
+					if (organization === 'AthosCommerce') {
+						return org !== `searchspring`;
+					}
+					if (organization === 'searchspring') {
+						return org !== `snap-implementations`;
+					}
+				})
 				.map((org) => `org:${org}`);
 
 			let page = 0;
@@ -89,7 +98,19 @@ export const init = async (options) => {
 			return repos.filter((repo) => repo.name.startsWith(`snapfu-scaffold-`));
 		};
 
-		const snapfuScaffoldRepos = await fetchScaffoldRepos();
+		const questions0 = [
+			{
+				type: 'input',
+				name: 'siteId',
+				message: 'Please enter the siteId as found in the SMC console (a1b2c3):',
+				validate: (input) => {
+					return input && input.length > 0 && /^[0-9a-z]{6}$/.test(input);
+				},
+			},
+		];
+		const answers0 = await inquirer.prompt(questions0);
+
+		const snapfuScaffoldRepos = await fetchScaffoldRepos({ organization: answers0.siteId.startsWith('at') ? 'AthosCommerce' : 'searchspring' });
 
 		if (!snapfuScaffoldRepos?.length) {
 			console.log(chalk.red('Failed to fetch scaffolds. Please try again later or contact Athos support for assistance.'));
@@ -222,19 +243,6 @@ export const init = async (options) => {
 			scaffold.answers = await inquirer.prompt(advancedQuestions);
 		}
 
-		// ask for siteId (as this is used as a snapfu variable when copying over scaffold)
-		const questions3 = [
-			{
-				type: 'input',
-				name: 'siteId',
-				message: 'Please enter the siteId as found in the SMC console (a1b2c3):',
-				validate: (input) => {
-					return input && input.length > 0 && /^[0-9a-z]{6}$/.test(input);
-				},
-			},
-		];
-		const answers3 = await inquirer.prompt(questions3);
-
 		let useGitHubRepo = false;
 		let repositoryAnswers = {};
 
@@ -296,7 +304,7 @@ export const init = async (options) => {
 		}
 
 		// combined answers
-		const answers = { ...answers1, ...answers2, ...answers3, ...repositoryAnswers };
+		const answers = { ...answers0, ...answers1, ...answers2, ...repositoryAnswers };
 
 		// validate siteId and secretKey
 		if (answers.secretKey) {
@@ -599,7 +607,7 @@ export const setRepoSecret = async function (options, details) {
 			const value = secretKey;
 			let secret_name = 'WEBSITE_SECRET_KEY';
 
-			if (typeof initContext.searchspring.siteId === 'object') {
+			if (typeof initContext.integration.siteId === 'object') {
 				secret_name = `WEBSITE_SECRET_KEY_${siteId.toUpperCase()}`; // github converts to uppercase, setting explicitly for the logging
 			}
 
