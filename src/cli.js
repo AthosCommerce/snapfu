@@ -10,7 +10,8 @@ import { login, logout, orgAccess, auth } from './login.js';
 import { initTemplate, listTemplates, removeTemplate, syncTemplate } from './recs.js';
 import { initBadgeTemplate, listBadgeTemplates, removeBadgeTemplate, syncBadgeTemplate } from './badges.js';
 import { init } from './init.js';
-import { listPatches, applyPatches, setupPatchRepo } from './patch.js';
+import { listPatches, applyPatches } from './patch.js';
+import { setupLibraryRepo } from './library.js';
 import { about } from './about.js';
 import { wait, cmp } from './utils/index.js';
 import { help } from './help.js';
@@ -48,8 +49,25 @@ async function parseArgumentsIntoOptions(rawArgs) {
 
 	const context = await getContext(process.cwd());
 
-	const searchspringDir = path.join(os.homedir(), '/.searchspring');
-	const user = await auth.loadUser(searchspringDir);
+	const snapfuDir = path.join(os.homedir(), '/.athoscommerce');
+	const oldSnapfuDir = path.join(os.homedir(), '/.searchspring');
+
+	// migrate old snapfu directory to new location
+	if (await fsp.stat(oldSnapfuDir).catch(() => false)) {
+		await fsp.rename(oldSnapfuDir, snapfuDir);
+
+		const oldLibraryDir = path.join(snapfuDir, 'snapfu-library');
+		if (await fsp.stat(oldLibraryDir).catch(() => false)) {
+			await fsp.rm(oldLibraryDir, { recursive: true, force: true });
+		}
+
+		const oldPatchesDir = path.join(snapfuDir, 'snapfu-patches');
+		if (await fsp.stat(oldPatchesDir).catch(() => false)) {
+			await fsp.rm(oldPatchesDir, { recursive: true, force: true });
+		}
+	}
+
+	const user = await auth.loadUser(snapfuDir);
 
 	let secretKey;
 	try {
@@ -162,22 +180,17 @@ jobs:
 
 	return {
 		config: {
-			searchspringDir,
+			snapfuDir,
 			directories: {
 				components: {
 					recommendation: './src/components/Recommendations',
 					badge: './src/components/Badges',
 				},
 			},
-			patches: {
-				dir: path.join(searchspringDir, 'snapfu-patches'),
-				repoName: 'snapfu-patches',
-				repoUrl: `https://github.com/searchspring/snapfu-patches.git`,
-			},
 			library: {
-				dir: path.join(searchspringDir, 'snapfu-library'),
+				dir: path.join(snapfuDir, 'snapfu-library'),
 				repoName: 'snapfu-library',
-				repoUrl: `https://github.com/searchspring/snapfu-library.git`,
+				repoUrl: `https://github.com/AthosCommerce/snapfu-library.git`,
 			},
 		},
 		user,
@@ -366,7 +379,7 @@ export async function cli(args) {
 					break;
 
 				case 'fetch':
-					await setupPatchRepo(options);
+					await setupLibraryRepo(options);
 					break;
 
 				default:

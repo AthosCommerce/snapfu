@@ -84,8 +84,8 @@ let badgesLocationsPath = '';
 beforeAll(async () => {
 	// setup creds
 	homeDir = path.join(tempDirectory, Math.random() + '');
-	fs.mkdirsSync(path.join(homeDir, '.searchspring'));
-	await fsp.writeFile(path.join(homeDir, '.searchspring/creds.json'), JSON.stringify(mockCreds));
+	fs.mkdirsSync(path.join(homeDir, '.athoscommerce'));
+	await fsp.writeFile(path.join(homeDir, '.athoscommerce/creds.json'), JSON.stringify(mockCreds));
 
 	// setup project
 	projectDirRoot = path.join(tempDirectory, Math.random() + '');

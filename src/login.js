@@ -19,11 +19,11 @@ export const login = async (options, opener, port) => {
 	}
 
 	const value = await receivedUrl;
-	return auth.saveCredsFromUrl(value, options.config.searchspringDir);
+	return auth.saveCredsFromUrl(value, options.config.snapfuDir);
 };
 
 export const logout = async (options) => {
-	return auth.removeCreds(options.config.searchspringDir);
+	return auth.removeCreds(options.config.snapfuDir);
 };
 
 export const orgAccess = async (options, opener) => {

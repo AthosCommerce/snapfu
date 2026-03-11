@@ -80,6 +80,9 @@ export const init = async (options) => {
 				})
 				.map((org) => `org:${org}`);
 
+			// topics based on org (are they in snap-implementations?)
+			const topic = orgs.includes('snap-implementations') ? '' : '-topic:internal';
+
 			let page = 0;
 			let per_page = 100;
 			let repos = [];
@@ -87,7 +90,7 @@ export const init = async (options) => {
 			do {
 				page++;
 				response = await octokit.rest.search.repos({
-					q: `snapfu-scaffold-+archived:false+${searchOrgs.join('+')}`,
+					q: `snapfu-scaffold- ${topic}+archived:false+${searchOrgs.join('+')}`,
 					per_page,
 					page,
 				});
@@ -461,7 +464,7 @@ export const init = async (options) => {
 
 		// save secretKey mapping to creds.json
 		if (answers.secretKey) {
-			await auth.saveSecretKey(answers.secretKey, answers.siteId, options.config.searchspringDir);
+			await auth.saveSecretKey(answers.secretKey, answers.siteId, options.config.snapfuDir);
 		}
 
 		// Set repository secret and branch protection

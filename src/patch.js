@@ -10,34 +10,10 @@ import { editJSON } from './patch/edit-json.js';
 import { editYAML } from './patch/edit-yaml.js';
 import { findReplace } from './patch/find-replace.js';
 import { cmp, copy, commandOutput, boxify, boxifyVersions } from './utils/index.js';
-
-export const setupPatchRepo = async (options) => {
-	// clone or pull snapfu patches repository
-	try {
-		if (!existsSync(options.config.searchspringDir)) {
-			mkdirSync(options.config.searchspringDir);
-		}
-		if (existsSync(options.config.patches.dir)) {
-			console.log(`Updating ${options.config.patches.repoName}...`);
-			const { stdout, stderr } = await commandOutput(`git pull`, options.config.patches.dir);
-			// console.log(stdout || stderr);
-		} else {
-			console.log(`Cloning ${options.config.patches.repoName} into ${options.config.patches.dir} ...`);
-			const { stdout, stderr } = await commandOutput(
-				`git clone ${options.config.patches.repoUrl} ${options.config.patches.repoName}`,
-				options.config.searchspringDir
-			);
-			// console.log(stdout || stderr);
-		}
-	} catch (e) {
-		console.log(chalk.red(`Failed to update patch files!`));
-		// console.log(chalk.red(e));
-		exit(1);
-	}
-};
+import { setupLibraryRepo } from './library.js';
 
 export const listPatches = async (options, skipUpdate = false) => {
-	if (!skipUpdate) await setupPatchRepo(options);
+	if (!skipUpdate) await setupLibraryRepo(options);
 
 	const { context } = options;
 	const { integration, project } = context;
@@ -81,8 +57,8 @@ export const getVersions = async (options, startingAt, endingAt) => {
 	const { integration } = context;
 	const { framework } = integration || {};
 
-	// ~/.searchspring/snapfu-patches/{framework}/{version}
-	const frameworkPath = path.join(options.config.patches.dir, framework);
+	// ~/.athoscommerce/snapfu-patches/[athos | searchspring]/{framework}/{version}
+	const frameworkPath = path.join(options.config.library.dir, options.context.project.org, framework, 'patches');
 	const patchDirExists = existsSync(frameworkPath);
 	let versions = [];
 
@@ -114,8 +90,8 @@ export const getCustomPatchVersions = async (options) => {
 	const { integration } = context;
 	const { framework } = integration || {};
 
-	// ~/.searchspring/snapfu-patches/custom/{framework}/{version}
-	const frameworkPath = path.join(options.config.patches.dir, 'custom', framework);
+	// ~/.athoscommerce/snapfu-patches/[athos | searchspring]/customPatches/{framework}/{version}
+	const frameworkPath = path.join(options.config.library.dir, options.context.project.org, framework, 'customPatches');
 	const patchDirExists = existsSync(frameworkPath);
 	let versions = [];
 
@@ -134,7 +110,7 @@ export const getCustomPatchVersions = async (options) => {
 };
 
 export const applyPatches = async (options, skipUpdate = false) => {
-	if (!skipUpdate) await setupPatchRepo(options);
+	if (!skipUpdate) await setupLibraryRepo(options);
 
 	const { context } = options;
 	const { integration, project } = context;
@@ -246,7 +222,6 @@ export const applyPatch = async (options, patch, isCustomPatch) => {
 	const { framework, distribution } = integration || {};
 
 	// copy over patch files into ./patch of the project directory
-
 	const projectDir = options.context.project.path;
 	const projectPatchDir = path.join(projectDir, 'patch');
 
@@ -260,7 +235,7 @@ export const applyPatch = async (options, patch, isCustomPatch) => {
 
 	// copy patch files into ./patch directory in project
 	await fsp.mkdir(projectPatchDir);
-	const patchDir = path.join(options.config.patches.dir, isCustomPatch ? 'custom' : '', framework, patch);
+	const patchDir = path.join(options.config.library.dir, options.context.project.org, framework, isCustomPatch ? 'customPatches' : 'patches', patch);
 	await copy(patchDir, projectPatchDir, { clobber: true });
 
 	// read the dir and log contents
