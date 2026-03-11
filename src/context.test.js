@@ -128,7 +128,6 @@ describe('getContext function', () => {
 		await fsp.writeFile(packagePath, JSON.stringify(mockPackageJSON));
 
 		const context = await getContext(projectDir);
-		console.log(context);
 		expect(context).toHaveProperty('project');
 		expect(context.project).toHaveProperty('org');
 		expect(context.project.org).toBe('athos');
@@ -155,7 +154,6 @@ describe('getContext function', () => {
 		await fsp.writeFile(packagePath, JSON.stringify(mockPackageJSON));
 
 		const context = await getContext(projectDir);
-		console.log(context);
 		expect(context).toHaveProperty('project');
 		expect(context.project).toHaveProperty('org');
 		expect(context.project.org).toBe('athos');

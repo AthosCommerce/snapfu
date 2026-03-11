@@ -68,14 +68,15 @@ export const init = async (options) => {
 			const searchOrgs = orgs
 				.concat(user.login)
 				.concat('searchspring')
-				.concat('snap-implementations')
+				.concat('AthosCommerce')
 				.filter((org) => {
 					if (organization === 'AthosCommerce') {
 						return org !== `searchspring`;
 					}
 					if (organization === 'searchspring') {
-						return org !== `snap-implementations`;
+						return org !== `AthosCommerce`;
 					}
+					return true;
 				})
 				.map((org) => `org:${org}`);
 

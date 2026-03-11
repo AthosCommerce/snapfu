@@ -109,7 +109,7 @@ export async function getProject(dir) {
 				distribution,
 				packageJSON: parsedContents,
 				org,
-				version: org ?? parsedContents[org]?.version ?? '0.0.0',
+				version: parsedContents[org]?.version ?? '0.0.0',
 			};
 
 			if (!projectDetails.org) {

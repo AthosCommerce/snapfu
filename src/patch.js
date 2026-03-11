@@ -44,7 +44,7 @@ export const listPatches = async (options, skipUpdate = false) => {
 	const { framework } = integration || {};
 	let startVersion = project?.version;
 
-	if (!integration || !context.project || !context.project.path || !framework || !startVersion) {
+	if (!integration || !context.project || !context.project.path || !framework) {
 		console.log(chalk.red(`Error: No Snap project found.`));
 		exit(1);
 	}
