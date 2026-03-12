@@ -6,7 +6,7 @@ The scaffolding CLI for the Snap SDK.
 
 - node
 - install the project in your workspace directory
-  - `git clone git@github.com:searchspring/snapfu.git`
+  - `git clone git@github.com:AthosCommerce/snapfu.git`
   - `cd snapfu && npm i`
 
 ## Development

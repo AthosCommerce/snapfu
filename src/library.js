@@ -2,7 +2,7 @@
 	Current commands utilizing components:
 	* recs init
 	
-	snapfu-library https://github.com/searchspring/snapfu-library
+	snapfu-library https://github.com/AthosCommerce/snapfu-library
 */
 
 import { existsSync, mkdirSync, promises as fsp, statSync } from 'fs';

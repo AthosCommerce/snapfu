@@ -1,7 +1,7 @@
 {
 	"name": "snapfu",
 	"version": "1.14.0",
-	"author": "searchspring",
+	"author": "AthosCommerce",
 	"license": "MIT",
 	"description": "Command line interface for Snap!",
 	"main": "src/index.js",
@@ -20,7 +20,7 @@
 		"format-check": "prettier --check src *.json",
 		"prepare": "husky",
 		"version": "standard-version -a",
-		"postversion": "git push && git push --tags",
+		"postpublish": "git push && git push --tags",
 		"snapfu": "./bin/snapfu.js"
 	},
 	"lint-staged": {

@@ -124,7 +124,7 @@ async function parseArgumentsIntoOptions(rawArgs) {
 							chalk.red(`Could not find Github secret 'WEBSITE_SECRET_KEY_${siteId.toUpperCase()}' in 'secrets' input
 It can be added by running 'snapfu secrets add' in the project's directory locally, 
 or added manual in the project's repository secrets. 
-The value can be obtained in the Searchspring Management Console.
+The value can be obtained in the Athos Commerce Management Console.
 Then ensure that you are providing 'secrets' when running the action. ie:
 
 jobs:
@@ -135,8 +135,8 @@ jobs:
 	  - name: Checkout action
 		uses: actions/checkout@v2
 		with:
-		  repository: searchspring/snap-action
-	  - name: Run @searchspring/snap-action
+		  repository: AthosCommerce/snap-action
+	  - name: Run @athoscommerce/snap-action
 		uses: ./
 		with:
 		  secrets: \${{ toJSON(secrets) }}
@@ -154,7 +154,7 @@ jobs:
 					console.log(chalk.red('The siteId object in package.json is invalid. Expected format:', JSON.stringify(context.integration)));
 					console.log(
 						chalk.red(`
-"searchspring": {
+"athos": {
 	"siteId": {
 		"xxxxx1": {
 			"name": "site1.com.au"
