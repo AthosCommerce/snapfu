@@ -7,12 +7,10 @@ import { auth } from './login.js';
 import { commandOutput } from './utils/index.js';
 
 export async function getContext(dir) {
-	let project, searchspring, branch, branchList, remote, organization, name, projectVersion;
+	let project, integration, branch, branchList, remote, organization, name;
 	try {
 		project = await getProject(dir);
-
-		searchspring = project?.packageJSON?.searchspring;
-		projectVersion = searchspring?.version || '0.0.0';
+		integration = project?.packageJSON?.athos || project?.packageJSON?.searchspring;
 	} catch (err) {
 		// do nothing
 	}
@@ -58,8 +56,7 @@ export async function getContext(dir) {
 			branch,
 			branchList,
 		},
-		searchspring,
-		projectVersion,
+		integration,
 	};
 }
 
@@ -76,7 +73,8 @@ export async function getProject(dir) {
 			// if index.ts or index.tsx exists, assume typescript
 			let type = 'javascript';
 			let distribution = 'Snap';
-			if (parsedContents.searchspring) {
+			const org = parsedContents.athos ? 'athos' : parsedContents.searchspring ? 'searchspring' : null;
+			if (org) {
 				try {
 					// check for ts
 					const file = path.join(path.dirname(packageFile), 'src', 'index.ts');
@@ -110,8 +108,46 @@ export async function getProject(dir) {
 				type,
 				distribution,
 				packageJSON: parsedContents,
+				org,
+				version: parsedContents[org]?.version ?? '0.0.0',
 			};
 
+			if (!projectDetails.org) {
+				console.log(chalk.red(`Error: project package.json file is missing key 'athos' or 'searchspring'`));
+				exit(1);
+			}
+			if (Object.keys(parsedContents[projectDetails.org]).length === 0) {
+				console.log(chalk.red(`Error: project package.json file is missing ${projectDetails.org} configuration`));
+				exit(1);
+			}
+			if (parsedContents['searchspring'] && parsedContents['athos']) {
+				console.log(chalk.red(`Error: project package.json file contains both 'athos' and 'searchspring' keys`));
+				exit(1);
+			}
+
+			const siteId = parsedContents[projectDetails.org].siteId;
+			if (siteId && typeof siteId === 'string') {
+				const isValid =
+					projectDetails.org === 'athos'
+						? siteId.startsWith('at') && /^[0-9a-z]{6}$/.test(siteId)
+						: !siteId.startsWith('at') && /^[0-9a-z]{6}$/.test(siteId);
+				if (!isValid) {
+					console.log(chalk.red(`Error: project package.json '${projectDetails.org}' configuration contains an invalid siteId.`));
+					exit(1);
+				}
+			} else if (siteId && typeof siteId === 'object') {
+				const allSiteIdsCorrect = Object.keys(siteId).every((siteId) => {
+					if (projectDetails.org === 'athos') {
+						return siteId.startsWith('at') && /^[0-9a-z]{6}$/.test(siteId);
+					} else {
+						return !siteId.startsWith('at') && /^[0-9a-z]{6}$/.test(siteId);
+					}
+				});
+				if (!allSiteIdsCorrect) {
+					console.log(chalk.red(`Error: project package.json '${projectDetails.org}' configuration contains an invalid siteId.`));
+					exit(1);
+				}
+			}
 			return projectDetails;
 		}
 

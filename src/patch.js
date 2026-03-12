@@ -10,46 +10,22 @@ import { editJSON } from './patch/edit-json.js';
 import { editYAML } from './patch/edit-yaml.js';
 import { findReplace } from './patch/find-replace.js';
 import { cmp, copy, commandOutput, boxify, boxifyVersions } from './utils/index.js';
-
-export const setupPatchRepo = async (options) => {
-	// clone or pull snapfu patches repository
-	try {
-		if (!existsSync(options.config.searchspringDir)) {
-			mkdirSync(options.config.searchspringDir);
-		}
-		if (existsSync(options.config.patches.dir)) {
-			console.log(`Updating ${options.config.patches.repoName}...`);
-			const { stdout, stderr } = await commandOutput(`git pull`, options.config.patches.dir);
-			// console.log(stdout || stderr);
-		} else {
-			console.log(`Cloning ${options.config.patches.repoName} into ${options.config.patches.dir} ...`);
-			const { stdout, stderr } = await commandOutput(
-				`git clone ${options.config.patches.repoUrl} ${options.config.patches.repoName}`,
-				options.config.searchspringDir
-			);
-			// console.log(stdout || stderr);
-		}
-	} catch (e) {
-		console.log(chalk.red(`Failed to update patch files!`));
-		// console.log(chalk.red(e));
-		exit(1);
-	}
-};
+import { setupLibraryRepo } from './library.js';
 
 export const listPatches = async (options, skipUpdate = false) => {
-	if (!skipUpdate) await setupPatchRepo(options);
+	if (!skipUpdate) await setupLibraryRepo(options);
 
 	const { context } = options;
-	const { searchspring, projectVersion } = context;
-	const { framework } = searchspring || {};
-	let startVersion = projectVersion;
+	const { integration, project } = context;
+	const { framework } = integration || {};
+	let startVersion = project?.version;
 
-	if (!searchspring || !context.project || !context.project.path || !framework || !projectVersion) {
+	if (!integration || !context.project || !context.project.path || !framework) {
 		console.log(chalk.red(`Error: No Snap project found.`));
 		exit(1);
 	}
 
-	if (!projectVersion) {
+	if (!startVersion) {
 		console.log(chalk.red(`Could not find project version in package.json`));
 		exit(1);
 	}
@@ -60,12 +36,12 @@ export const listPatches = async (options, skipUpdate = false) => {
 
 	const availablePatches = await getVersions(options, startVersion);
 
-	console.log(`\n${chalk.white.bold(`Current Project Version:`)} ${chalk.bold.cyan(projectVersion)}`);
+	console.log(`\n${chalk.white.bold(`Current Project Version:`)} ${startVersion && chalk.bold.cyan(startVersion)}`);
 
 	if (availablePatches.length) {
 		console.log(chalk.white.bold(`\n${startVersion ? 'Available ' : ''}Patches:`));
 		availablePatches.forEach((version) => {
-			if (version == projectVersion) {
+			if (version == startVersion) {
 				console.log(chalk.cyan(`${chalk.bold(version)} (current)`));
 			} else {
 				console.log(`${version}`);
@@ -78,11 +54,11 @@ export const listPatches = async (options, skipUpdate = false) => {
 
 export const getVersions = async (options, startingAt, endingAt) => {
 	const { context } = options;
-	const { searchspring } = context;
-	const { framework } = searchspring || {};
+	const { integration } = context;
+	const { framework } = integration || {};
 
-	// ~/.searchspring/snapfu-patches/{framework}/{version}
-	const frameworkPath = path.join(options.config.patches.dir, framework);
+	// ~/.athoscommerce/snapfu-library/[athos | searchspring]/{framework}/{version}
+	const frameworkPath = path.join(options.config.library.dir, options.context.project.org, framework, 'patches');
 	const patchDirExists = existsSync(frameworkPath);
 	let versions = [];
 
@@ -111,11 +87,11 @@ export const getVersions = async (options, startingAt, endingAt) => {
 
 export const getCustomPatchVersions = async (options) => {
 	const { context } = options;
-	const { searchspring } = context;
-	const { framework } = searchspring || {};
+	const { integration } = context;
+	const { framework } = integration || {};
 
-	// ~/.searchspring/snapfu-patches/custom/{framework}/{version}
-	const frameworkPath = path.join(options.config.patches.dir, 'custom', framework);
+	// ~/.athoscommerce/snapfu-library/[athos | searchspring]/customPatches/{framework}/{version}
+	const frameworkPath = path.join(options.config.library.dir, options.context.project.org, framework, 'customPatches');
 	const patchDirExists = existsSync(frameworkPath);
 	let versions = [];
 
@@ -134,20 +110,20 @@ export const getCustomPatchVersions = async (options) => {
 };
 
 export const applyPatches = async (options, skipUpdate = false) => {
-	if (!skipUpdate) await setupPatchRepo(options);
+	if (!skipUpdate) await setupLibraryRepo(options);
 
 	const { context } = options;
-	const { searchspring, projectVersion } = context;
-	const { framework } = searchspring || {};
+	const { integration, project } = context;
+	const { framework } = integration || {};
 	const [_command, versionApply] = options.args;
 
-	if (!searchspring || !context.project || !context.project.path || !framework || !projectVersion) {
+	if (!integration || !context.project || !context.project.path || !framework || !project.version) {
 		console.log(chalk.red(`Error: No Snap project found.`));
 		exit(1);
 	}
 
 	// verify project version
-	if (!projectVersion.match(/^\w?(\d+\.\d+\.\d+-?\d*)$/)) {
+	if (!project.version.match(/^\w?(\d+\.\d+\.\d+-?\d*)$/)) {
 		console.log('Project version invalid.');
 		exit(1);
 	}
@@ -188,7 +164,7 @@ export const applyPatches = async (options, skipUpdate = false) => {
 			// custom patches don't follow standard versioning, and are one-off patches
 			patches = [versionApply];
 		} else {
-			patches = await getVersions(options, projectVersion, filteredVersionApply);
+			patches = await getVersions(options, project.version, filteredVersionApply);
 		}
 		if (patches.length == 0) {
 			console.log(`\n${chalk.bold('Nothing to patch.')}`);
@@ -203,7 +179,7 @@ export const applyPatches = async (options, skipUpdate = false) => {
 	// display transition output
 	const finalVersion = patches[patches.length - 1];
 	console.log(`\n${chalk.cyan.bold('Apply Patch')}`);
-	console.log(chalk.cyan(boxifyVersions(` ${projectVersion} `, ` ${finalVersion} `)));
+	console.log(chalk.cyan(boxifyVersions(` ${project.version} `, ` ${finalVersion} `)));
 
 	if (!options?.options?.ci) {
 		const question = [
@@ -232,7 +208,7 @@ export const applyPatches = async (options, skipUpdate = false) => {
 
 	// custom patches should not update the package.json version
 	if (!isCustomPatch) {
-		await editJSON(options, 'package.json', [{ update: { properties: { searchspring: { version: finalVersion } } } }]);
+		await editJSON(options, 'package.json', [{ update: { properties: { [project.org]: { version: finalVersion } } } }]);
 	}
 
 	// patching complete
@@ -242,11 +218,10 @@ export const applyPatches = async (options, skipUpdate = false) => {
 
 export const applyPatch = async (options, patch, isCustomPatch) => {
 	const { context } = options;
-	const { searchspring } = context;
-	const { framework, distribution } = searchspring || {};
+	const { integration } = context;
+	const { framework, distribution } = integration || {};
 
 	// copy over patch files into ./patch of the project directory
-
 	const projectDir = options.context.project.path;
 	const projectPatchDir = path.join(projectDir, 'patch');
 
@@ -260,7 +235,7 @@ export const applyPatch = async (options, patch, isCustomPatch) => {
 
 	// copy patch files into ./patch directory in project
 	await fsp.mkdir(projectPatchDir);
-	const patchDir = path.join(options.config.patches.dir, isCustomPatch ? 'custom' : '', framework, patch);
+	const patchDir = path.join(options.config.library.dir, options.context.project.org, framework, isCustomPatch ? 'customPatches' : 'patches', patch);
 	await copy(patchDir, projectPatchDir, { clobber: true });
 
 	// read the dir and log contents

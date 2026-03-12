@@ -12,7 +12,7 @@ beforeEach(async () => {
 		return freep;
 	});
 	tempDir = tempDirectory + '/' + Math.random();
-	fs.mkdirsSync(tempDir + '/.searchspring');
+	fs.mkdirsSync(tempDir + '/.athoscommerce');
 });
 
 afterEach(() => {

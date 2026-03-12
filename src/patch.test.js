@@ -1,5 +1,6 @@
-import { listPatches, applyPatches, getVersions, setupPatchRepo } from './patch.js';
-import { cmp } from './utils/index.js';
+import { listPatches, applyPatches, getVersions } from './patch.js';
+import { setupLibraryRepo } from './library.js';
+import { cmp, commandOutput } from './utils/index.js';
 
 import tempDirectory from 'temp-dir';
 import fs from 'fs-extra';
@@ -163,7 +164,7 @@ const mockPatches = {
 };
 
 let homeDir = '';
-let searchspringDir = '';
+let snapfuDir = '';
 let mockPatchesDir = '';
 let projectDirRoot = '';
 let projectDir = '';
@@ -172,15 +173,15 @@ let packageJSONPath = '';
 beforeAll(async () => {
 	// setup project
 	homeDir = path.join(tempDirectory, Math.random() + '');
-	searchspringDir = path.join(homeDir, '.searchspring');
-	mockPatchesDir = path.join(searchspringDir, 'snapfu-mock-patches');
+	snapfuDir = path.join(homeDir, '.athoscommerce');
+	mockPatchesDir = path.join(snapfuDir, 'snapfu-mock-patches');
 	projectDirRoot = path.join(tempDirectory, Math.random() + '');
 	projectDir = path.join(projectDirRoot, 'projects/secret.project');
 
 	// create dirs
 	fs.mkdirsSync(projectDir, true);
 	fs.mkdirsSync(homeDir, true);
-	fs.mkdirsSync(searchspringDir, true);
+	fs.mkdirsSync(snapfuDir, true);
 	fs.mkdirsSync(mockPatchesDir, true);
 
 	packageJSONPath = path.join(projectDir, 'package.json');
@@ -188,7 +189,7 @@ beforeAll(async () => {
 	// setup patches mocks
 	for (const framework of Object.keys(mockPatches)) {
 		for (const version of mockPatches[framework]) {
-			const patchDirPath = path.join(mockPatchesDir, framework, version);
+			const patchDirPath = path.join(mockPatchesDir, 'searchspring', framework, 'patches', version);
 			fs.mkdirsSync(patchDirPath, true);
 
 			// create mock patch files for each patch version
@@ -228,36 +229,35 @@ afterAll(() => {
 	});
 });
 
-describe('setupPatchRepo function', () => {
-	it('can setup patch repo', async () => {
+describe('setupLibraryRepo function', () => {
+	it('can setup library repo', async () => {
 		const options = {
 			config: {
-				searchspringDir: path.join(searchspringDir),
-				patches: {
-					dir: path.join(searchspringDir, 'snapfu-patches'),
-					repoName: 'snapfu-patches',
-					repoUrl: 'https://github.com/searchspring/snapfu-patches.git',
+				snapfuDir: path.join(snapfuDir),
+				library: {
+					dir: path.join(snapfuDir, 'snapfu-library'),
+					repoName: 'snapfu-library',
+					repoUrl: 'https://github.com/AthosCommerce/snapfu-library.git',
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework: 'preact',
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
 				},
-				projectVersion: '0.0.1',
 			},
 			dev: false,
 			command: 'patch',
 			args: ['list'],
 		};
 
-		await setupPatchRepo(options);
+		await setupLibraryRepo(options);
 
-		const directoryContents = fs.statSync(options.config.patches.dir);
+		const directoryContents = fs.statSync(options.config.library.dir);
 		expect(directoryContents.isDirectory()).toBe(true);
 	});
 });
@@ -268,23 +268,23 @@ describe('getVersions function', () => {
 
 		const options = {
 			config: {
-				searchspringDir: path.join(homeDir, '/.searchspring'),
-				patches: {
+				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
-					repoUrl: 'git@github.com:searchspring/snapfu-patches.git',
+					repoUrl: 'git@github.com:AthosCommerce/snapfu-patches.git',
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework,
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
+					org: 'searchspring',
 				},
-				projectVersion: '0.0.1',
 			},
 			dev: false,
 			command: 'patch',
@@ -302,32 +302,32 @@ describe('getVersions function', () => {
 
 		const options = {
 			config: {
-				searchspringDir: path.join(homeDir, '/.searchspring'),
-				patches: {
+				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
-					repoUrl: 'git@github.com:searchspring/snapfu-patches.git',
+					repoUrl: 'git@github.com:AthosCommerce/snapfu-patches.git',
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework,
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.100.2',
 					path: projectDir,
+					org: 'searchspring',
 				},
-				projectVersion: '0.100.2',
 			},
 			dev: false,
 			command: 'patch',
 			args: ['list'],
 		};
 
-		const versions = await getVersions(options, options.context.projectVersion);
+		const versions = await getVersions(options, options.context.project.version);
 		const sortedMockVersions = mockPatches[framework].sort(cmp);
-		const startVersionIndex = mockPatches[framework].indexOf(options.context.projectVersion);
+		const startVersionIndex = mockPatches[framework].indexOf(options.context.project.version);
 		const trimmedMockVersions = sortedMockVersions.slice(startVersionIndex + 1);
 		expect(versions).toStrictEqual(trimmedMockVersions);
 	});
@@ -337,32 +337,32 @@ describe('getVersions function', () => {
 
 		const options = {
 			config: {
-				searchspringDir: path.join(homeDir, '/.searchspring'),
-				patches: {
+				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
-					repoUrl: 'git@github.com:searchspring/snapfu-patches.git',
+					repoUrl: 'git@github.com:AthosCommerce/snapfu-patches.git',
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework,
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.100.2',
 					path: projectDir,
+					org: 'searchspring',
 				},
-				projectVersion: '0.100.2',
 			},
 			dev: false,
 			command: 'patch',
 			args: ['list'],
 		};
 
-		const versions = await getVersions(options, undefined, options.context.projectVersion);
+		const versions = await getVersions(options, undefined, options.context.project.version);
 		const sortedMockVersions = mockPatches[framework].sort(cmp);
-		const endVersionIndex = mockPatches[framework].indexOf(options.context.projectVersion);
+		const endVersionIndex = mockPatches[framework].indexOf(options.context.project.version);
 		const trimmedMockVersions = sortedMockVersions.slice(0, endVersionIndex + 1);
 
 		expect(versions).toStrictEqual(trimmedMockVersions);
@@ -373,23 +373,23 @@ describe('getVersions function', () => {
 
 		const options = {
 			config: {
-				searchspringDir: path.join(homeDir, '/.searchspring'),
-				patches: {
+				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
-					repoUrl: 'git@github.com:searchspring/snapfu-patches.git',
+					repoUrl: 'git@github.com:AthosCommerce/snapfu-patches.git',
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework,
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.100.2',
 					path: projectDir,
+					org: 'searchspring',
 				},
-				projectVersion: '0.100.2',
 			},
 			dev: false,
 			command: 'patch',
@@ -397,9 +397,9 @@ describe('getVersions function', () => {
 		};
 
 		const endVersion = '0.101.0';
-		const versions = await getVersions(options, options.context.projectVersion, endVersion);
+		const versions = await getVersions(options, options.context.project.version, endVersion);
 		const sortedMockVersions = mockPatches[framework].sort(cmp);
-		const startVersionIndex = mockPatches[framework].indexOf(options.context.projectVersion);
+		const startVersionIndex = mockPatches[framework].indexOf(options.context.project.version);
 		const endVersionIndex = mockPatches[framework].indexOf(endVersion);
 		const trimmedMockVersions = sortedMockVersions.slice(startVersionIndex + 1, endVersionIndex + 1);
 
@@ -416,23 +416,23 @@ describe('listPatches', () => {
 
 		const options = {
 			config: {
-				searchspringDir: path.join(homeDir, '/.searchspring'),
-				patches: {
+				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
-					repoUrl: 'git@github.com:searchspring/snapfu-patches.git',
+					repoUrl: 'git@github.com:AthosCommerce/snapfu-patches.git',
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework: 'preact',
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
+					org: 'searchspring',
 				},
-				projectVersion: '0.0.1',
 			},
 			options: {
 				ci: true,
@@ -463,23 +463,23 @@ describe('applyPatches', () => {
 
 		const options = {
 			config: {
-				searchspringDir: path.join(homeDir, '/.searchspring'),
-				patches: {
+				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
 					repoUrl: 'git@github.com:searchspring/snapfu-patches.git',
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework: 'preact',
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
+					org: 'searchspring',
 				},
-				projectVersion: '0.0.1',
 			},
 			options: {
 				ci: true,
@@ -503,23 +503,23 @@ describe('applyPatches', () => {
 	it('can apply patches to latest', async () => {
 		const options = {
 			config: {
-				searchspringDir: path.join(homeDir, '/.searchspring'),
-				patches: {
+				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
-					repoUrl: 'git@github.com:searchspring/snapfu-patches.git',
+					repoUrl: 'git@github.com:AthosCommerce/snapfu-patches.git',
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework: 'preact',
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
+					org: 'searchspring',
 				},
-				projectVersion: '0.0.1',
 			},
 			options: {
 				ci: true,
@@ -547,24 +547,24 @@ describe('applyPatches', () => {
 
 		const options = {
 			config: {
-				searchspringDir: path.join(homeDir, '/.searchspring'),
-				patches: {
+				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
-					repoUrl: 'git@github.com:searchspring/snapfu-patches.git',
+					repoUrl: 'git@github.com:AthosCommerce/snapfu-patches.git',
 				},
 			},
 			context: {
-				searchspring: {
+				integration: {
 					siteId: 'abc123',
 					framework: 'preact',
 					distribution: 'templates',
 				},
 				project: {
-					// version: '0.0.1',
+					version: '0.0.1',
 					path: projectDir,
+					org: 'searchspring',
 				},
-				projectVersion: '0.0.1',
 			},
 			options: {
 				ci: true,
