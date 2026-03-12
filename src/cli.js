@@ -52,18 +52,21 @@ async function parseArgumentsIntoOptions(rawArgs) {
 	const snapfuDir = path.join(os.homedir(), '/.athoscommerce');
 	const oldSnapfuDir = path.join(os.homedir(), '/.searchspring');
 
-	// migrate old snapfu directory to new location
-	if (await fsp.stat(oldSnapfuDir).catch(() => false)) {
-		await fsp.rename(oldSnapfuDir, snapfuDir);
+	// check if snapfuDir doesn't exist
+	if (!(await fsp.stat(snapfuDir).catch(() => false))) {
+		// migrate old snapfu directory to new location
+		if (await fsp.stat(oldSnapfuDir).catch(() => false)) {
+			await fsp.rename(oldSnapfuDir, snapfuDir);
 
-		const oldLibraryDir = path.join(snapfuDir, 'snapfu-library');
-		if (await fsp.stat(oldLibraryDir).catch(() => false)) {
-			await fsp.rm(oldLibraryDir, { recursive: true, force: true });
-		}
+			const oldLibraryDir = path.join(snapfuDir, 'snapfu-library');
+			if (await fsp.stat(oldLibraryDir).catch(() => false)) {
+				await fsp.rm(oldLibraryDir, { recursive: true, force: true });
+			}
 
-		const oldPatchesDir = path.join(snapfuDir, 'snapfu-patches');
-		if (await fsp.stat(oldPatchesDir).catch(() => false)) {
-			await fsp.rm(oldPatchesDir, { recursive: true, force: true });
+			const oldPatchesDir = path.join(snapfuDir, 'snapfu-patches');
+			if (await fsp.stat(oldPatchesDir).catch(() => false)) {
+				await fsp.rm(oldPatchesDir, { recursive: true, force: true });
+			}
 		}
 	}
 

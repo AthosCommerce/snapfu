@@ -36,7 +36,7 @@ export const listPatches = async (options, skipUpdate = false) => {
 
 	const availablePatches = await getVersions(options, startVersion);
 
-	console.log(`\n${chalk.white.bold(`Current Project Version:`)} ${chalk.bold.cyan(startVersion)}`);
+	console.log(`\n${chalk.white.bold(`Current Project Version:`)} ${startVersion && chalk.bold.cyan(startVersion)}`);
 
 	if (availablePatches.length) {
 		console.log(chalk.white.bold(`\n${startVersion ? 'Available ' : ''}Patches:`));
@@ -57,7 +57,7 @@ export const getVersions = async (options, startingAt, endingAt) => {
 	const { integration } = context;
 	const { framework } = integration || {};
 
-	// ~/.athoscommerce/snapfu-patches/[athos | searchspring]/{framework}/{version}
+	// ~/.athoscommerce/snapfu-library/[athos | searchspring]/{framework}/{version}
 	const frameworkPath = path.join(options.config.library.dir, options.context.project.org, framework, 'patches');
 	const patchDirExists = existsSync(frameworkPath);
 	let versions = [];
@@ -90,7 +90,7 @@ export const getCustomPatchVersions = async (options) => {
 	const { integration } = context;
 	const { framework } = integration || {};
 
-	// ~/.athoscommerce/snapfu-patches/[athos | searchspring]/customPatches/{framework}/{version}
+	// ~/.athoscommerce/snapfu-library/[athos | searchspring]/customPatches/{framework}/{version}
 	const frameworkPath = path.join(options.config.library.dir, options.context.project.org, framework, 'customPatches');
 	const patchDirExists = existsSync(frameworkPath);
 	let versions = [];

@@ -90,7 +90,7 @@ export const buildLibrary = async (options) => {
 };
 
 export const buildLibraryComponents = async (dir, options) => {
-	// ~/.athoscommerce/snapfu-library/{framework}/{components}
+	// ~/.athoscommerce/snapfu-library/[athos | searchspring]/{framework}/{components}
 	const componentsDirContents = await fsp.readdir(dir);
 
 	const components = {};
