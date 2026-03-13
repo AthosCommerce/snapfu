@@ -19,7 +19,7 @@ jobs:
           fetch-depth: "0"
           ref: "develop"
 
-      - name: Set Github credentials
+      - name: Set GitHub credentials
         run: |
           git config user.name athos-machine
           git config user.email machine@athoscommerce.com

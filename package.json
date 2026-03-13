@@ -1,7 +1,7 @@
 {
 	"name": "snapfu",
 	"version": "1.14.0",
-	"author": "AthosCommerce",
+	"author": "Athos Commerce",
 	"license": "MIT",
 	"description": "Command line interface for Snap!",
 	"main": "src/index.js",

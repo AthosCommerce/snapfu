@@ -4,7 +4,7 @@
 
 <a href="https://www.npmjs.com/package/snapfu"><img alt="NPM Status" src="https://img.shields.io/npm/v/snapfu.svg?style=flat"></a>
 
-Snapfu is the scaffolding command line tool for the Athos Commerce Snap SDK. This tool creates a new Athos Commerce project from one of our existing Snap scaffolds and bootstraps a development environment. These scaffolds include a Github action that when triggered will build and deploy Snap bundles to our infrastructure (permissions required).
+Snapfu is the scaffolding command line tool for the Athos Commerce Snap SDK. This tool creates a new Athos Commerce project from one of our existing Snap scaffolds and bootstraps a development environment. These scaffolds include a GitHub action that when triggered will build and deploy Snap bundles to our infrastructure (permissions required).
 
 ## Installation
 
@@ -150,9 +150,9 @@ snapfu help [<command>]
 
 ## Deployment
 
-This tool integrates with the Athos Commerce build and deploy process. In order to take advantage of this you must have access to the `snap-implementations` Github organization and select it during init command. (Requires login & invitation to the organization upon request).
+This tool integrates with the Athos Commerce build and deploy process. In order to take advantage of this you must have access to the `snap-implementations` GitHub organization and select it during init command. (Requires login & invitation to the organization upon request).
 
-The tool uses Github actions to copy files to our AWS S3 backed CDN (Cloudfront).
+The tool uses GitHub actions to copy files to our AWS S3 backed CDN (Cloudfront).
 
 When you commit to the main branch (production), the github action will deploy all the files that build into `./dist` to a publicly readable S3 bucket which can be accessed at the following URLs:
 

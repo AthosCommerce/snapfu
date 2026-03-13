@@ -121,10 +121,10 @@ async function parseArgumentsIntoOptions(rawArgs) {
 
 					if (!secretKey && args['--secrets-ci']) {
 						console.log(
-							chalk.red(`Could not find Github secret 'WEBSITE_SECRET_KEY_${siteId.toUpperCase()}' in 'secrets' input
+							chalk.red(`Could not find GitHub secret 'WEBSITE_SECRET_KEY_${siteId.toUpperCase()}' in 'secrets' input
 It can be added by running 'snapfu secrets add' in the project's directory locally, 
 or added manual in the project's repository secrets. 
-The value can be obtained in the Athos Commerce Management Console.
+The value can be obtained in the Athos Search and Discovery Console.
 Then ensure that you are providing 'secrets' when running the action. ie:
 
 jobs:
@@ -136,7 +136,7 @@ jobs:
 		uses: actions/checkout@v2
 		with:
 		  repository: AthosCommerce/snap-action
-	  - name: Run @athoscommerce/snap-action
+	  - name: Run AthosCommerce/snap-action
 		uses: ./
 		with:
 		  secrets: \${{ toJSON(secrets) }}
