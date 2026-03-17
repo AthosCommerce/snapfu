@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Check the documentation
-    url: https://searchspring.github.io/snap/
-    about: Developer documentation regarding details and usage of Searchspring's Snap products.
+    url: https://athoscommerce.github.io/snap/
+    about: Developer documentation regarding details and usage of Athos Commerce's Snap products.
   - name: General Usage Questions
-    url: https://github.com/searchspring/snap/discussions/categories/q-a
+    url: https://github.com/AthosCommerce/snap/discussions/categories/q-a
     about: Issues are dedicated to feature requests and bugs, if you have questions, please see our Q&A.
