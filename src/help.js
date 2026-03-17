@@ -12,7 +12,7 @@ These are the snapfu commands used in various situations
     ${chalk.whiteBright('recs')}                          Recommendation template management
     ${chalk.whiteBright('secrets')}                       Project secret management
     ${chalk.whiteBright('patch')}                         Apply patches to update project
-    ${chalk.whiteBright('login')}                         Oauths with github to retrieve additional scaffolds and create repositories when using the init command
+    ${chalk.whiteBright('login')}                         Authenticate with GitHub to create repositories with the init command
     ${chalk.whiteBright('logout')}                        Removes login credentials
     ${chalk.whiteBright('org-access')}                    Review and change organization access for the tool
     ${chalk.whiteBright('whoami')}                        Shows the current user

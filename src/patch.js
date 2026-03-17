@@ -90,7 +90,7 @@ export const getCustomPatchVersions = async (options) => {
 	const { integration } = context;
 	const { framework } = integration || {};
 
-	// ~/.athoscommerce/snapfu-library/[athos | searchspring]/customPatches/{framework}/{version}
+	// ~/.athoscommerce/snapfu-library/[athos | searchspring]/{org}/{framework}/customPatches/{version}
 	const frameworkPath = path.join(options.config.library.dir, options.context.project.org, framework, 'customPatches');
 	const patchDirExists = existsSync(frameworkPath);
 	let versions = [];
