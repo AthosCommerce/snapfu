@@ -49,8 +49,15 @@ async function parseArgumentsIntoOptions(rawArgs) {
 
 	const context = await getContext(process.cwd());
 
-	const snapfuDir = path.join(os.homedir(), '/.athoscommerce');
-	const oldSnapfuDir = path.join(os.homedir(), '/.searchspring');
+	// exit on commands that require a Snap project
+	const orgRequiredCommands = ['badge', 'badges', 'recs', 'recommendation', 'recommendations', 'secret', 'secrets', 'patch'];
+	if (orgRequiredCommands.includes(command) && !context.project?.org) {
+		console.log(chalk.red(`Snap project not found. The '${command}' command must be run inside a Snap project directory.`));
+		exit(1);
+	}
+
+	const snapfuDir = path.join(os.homedir(), '.athoscommerce');
+	const oldSnapfuDir = path.join(os.homedir(), '.searchspring');
 
 	// check if snapfuDir doesn't exist
 	if (!(await fsp.stat(snapfuDir).catch(() => false))) {

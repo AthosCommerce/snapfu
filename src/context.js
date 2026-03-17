@@ -74,6 +74,7 @@ export async function getProject(dir) {
 			let type = 'javascript';
 			let distribution = 'Snap';
 			const org = parsedContents.athos ? 'athos' : parsedContents.searchspring ? 'searchspring' : null;
+
 			if (org) {
 				try {
 					// check for ts
@@ -113,8 +114,7 @@ export async function getProject(dir) {
 			};
 
 			if (!projectDetails.org) {
-				console.log(chalk.red(`Error: project package.json file is missing key 'athos' or 'searchspring'`));
-				exit(1);
+				return projectDetails;
 			}
 			if (Object.keys(parsedContents[projectDetails.org]).length === 0) {
 				console.log(chalk.red(`Error: project package.json file is missing ${projectDetails.org} configuration`));

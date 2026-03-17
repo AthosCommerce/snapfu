@@ -83,7 +83,7 @@ snapfu patch <command> <args> [--options]
 - `fetch` - Fetch latest versions of patches
 
 ### `login` - OAuth with GitHub
-OAuths with GitHub to retrieve additional scaffolds and create repositories when using the init command
+OAuths with GitHub to allow for creating repositories when using the init command
 
 ```bash
 snapfu login

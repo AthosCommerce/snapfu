@@ -268,7 +268,7 @@ describe('getVersions function', () => {
 
 		const options = {
 			config: {
-				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				snapfuDir: path.join(homeDir, '.athoscommerce'),
 				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
@@ -302,7 +302,7 @@ describe('getVersions function', () => {
 
 		const options = {
 			config: {
-				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				snapfuDir: path.join(homeDir, '.athoscommerce'),
 				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
@@ -337,7 +337,7 @@ describe('getVersions function', () => {
 
 		const options = {
 			config: {
-				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				snapfuDir: path.join(homeDir, '.athoscommerce'),
 				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
@@ -373,7 +373,7 @@ describe('getVersions function', () => {
 
 		const options = {
 			config: {
-				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				snapfuDir: path.join(homeDir, '.athoscommerce'),
 				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
@@ -416,7 +416,7 @@ describe('listPatches', () => {
 
 		const options = {
 			config: {
-				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				snapfuDir: path.join(homeDir, '.athoscommerce'),
 				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
@@ -463,7 +463,7 @@ describe('applyPatches', () => {
 
 		const options = {
 			config: {
-				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				snapfuDir: path.join(homeDir, '.athoscommerce'),
 				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
@@ -503,7 +503,7 @@ describe('applyPatches', () => {
 	it('can apply patches to latest', async () => {
 		const options = {
 			config: {
-				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				snapfuDir: path.join(homeDir, '.athoscommerce'),
 				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
@@ -547,7 +547,7 @@ describe('applyPatches', () => {
 
 		const options = {
 			config: {
-				snapfuDir: path.join(homeDir, '/.athoscommerce'),
+				snapfuDir: path.join(homeDir, '.athoscommerce'),
 				library: {
 					dir: mockPatchesDir,
 					repoName: 'snapfu-patches',
