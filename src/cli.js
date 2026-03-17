@@ -10,7 +10,8 @@ import { login, logout, orgAccess, auth } from './login.js';
 import { initTemplate, listTemplates, removeTemplate, syncTemplate } from './recs.js';
 import { initBadgeTemplate, listBadgeTemplates, removeBadgeTemplate, syncBadgeTemplate } from './badges.js';
 import { init } from './init.js';
-import { listPatches, applyPatches, setupPatchRepo } from './patch.js';
+import { listPatches, applyPatches } from './patch.js';
+import { setupLibraryRepo } from './library.js';
 import { about } from './about.js';
 import { wait, cmp } from './utils/index.js';
 import { help } from './help.js';
@@ -48,12 +49,39 @@ async function parseArgumentsIntoOptions(rawArgs) {
 
 	const context = await getContext(process.cwd());
 
-	const searchspringDir = path.join(os.homedir(), '/.searchspring');
-	const user = await auth.loadUser(searchspringDir);
+	// exit on commands that require a Snap project
+	const orgRequiredCommands = ['badge', 'badges', 'recs', 'recommendation', 'recommendations', 'secret', 'secrets', 'patch'];
+	if (orgRequiredCommands.includes(command) && !context.project?.org) {
+		console.log(chalk.red(`Snap project not found. The '${command}' command must be run inside a Snap project directory.`));
+		exit(1);
+	}
+
+	const snapfuDir = path.join(os.homedir(), '.athoscommerce');
+	const oldSnapfuDir = path.join(os.homedir(), '.searchspring');
+
+	// check if snapfuDir doesn't exist
+	if (!(await fsp.stat(snapfuDir).catch(() => false))) {
+		// migrate old snapfu directory to new location
+		if (await fsp.stat(oldSnapfuDir).catch(() => false)) {
+			await fsp.rename(oldSnapfuDir, snapfuDir);
+
+			const oldLibraryDir = path.join(snapfuDir, 'snapfu-library');
+			if (await fsp.stat(oldLibraryDir).catch(() => false)) {
+				await fsp.rm(oldLibraryDir, { recursive: true, force: true });
+			}
+
+			const oldPatchesDir = path.join(snapfuDir, 'snapfu-patches');
+			if (await fsp.stat(oldPatchesDir).catch(() => false)) {
+				await fsp.rm(oldPatchesDir, { recursive: true, force: true });
+			}
+		}
+	}
+
+	const user = await auth.loadUser(snapfuDir);
 
 	let secretKey;
 	try {
-		secretKey = args['--secret-key'] || user.keys[context.searchspring.siteId];
+		secretKey = args['--secret-key'] || user.keys[context.integration.siteId];
 	} catch (e) {
 		// do nothing - when running init context may not exist
 	}
@@ -85,27 +113,25 @@ async function parseArgumentsIntoOptions(rawArgs) {
 		}
 	};
 
-	if (context.searchspring && typeof context.searchspring.siteId === 'object') {
-		// searchsoring.siteId contains multiple sites
-
-		const siteIds = Object.keys(context.searchspring.siteId);
+	if (context.integration && typeof context.integration.siteId === 'object') {
+		const siteIds = Object.keys(context.integration.siteId);
 		if (!siteIds || !siteIds.length) {
-			console.log(chalk.red('searchspring.siteId object in package.json is empty'));
+			console.log(chalk.red('siteId is empty in package.json object: ', JSON.stringify(context.integration)));
 			exit(1);
 		}
 
 		multipleSites = siteIds
 			.map((siteId) => {
 				try {
-					const { name } = context.searchspring.siteId[siteId];
+					const { name } = context.integration.siteId[siteId];
 					const secretKey = getSecretKeyFromCLI(siteId) || user.keys[siteId];
 
 					if (!secretKey && args['--secrets-ci']) {
 						console.log(
-							chalk.red(`Could not find Github secret 'WEBSITE_SECRET_KEY_${siteId.toUpperCase()}' in 'secrets' input
+							chalk.red(`Could not find GitHub secret 'WEBSITE_SECRET_KEY_${siteId.toUpperCase()}' in 'secrets' input
 It can be added by running 'snapfu secrets add' in the project's directory locally, 
 or added manual in the project's repository secrets. 
-The value can be obtained in the Searchspring Management Console.
+The value can be obtained in the Athos Search and Discovery Console.
 Then ensure that you are providing 'secrets' when running the action. ie:
 
 jobs:
@@ -116,8 +142,8 @@ jobs:
 	  - name: Checkout action
 		uses: actions/checkout@v2
 		with:
-		  repository: searchspring/snap-action
-	  - name: Run @searchspring/snap-action
+		  repository: AthosCommerce/snap-action
+	  - name: Run AthosCommerce/snap-action
 		uses: ./
 		with:
 		  secrets: \${{ toJSON(secrets) }}
@@ -132,10 +158,10 @@ jobs:
 						secretKey,
 					};
 				} catch (e) {
-					console.log(chalk.red('The searchspring.siteId object in package.json is invalid. Expected format:'));
+					console.log(chalk.red('The siteId object in package.json is invalid. Expected format:', JSON.stringify(context.integration)));
 					console.log(
 						chalk.red(`
-"searchspring": {
+"athos": {
 	"siteId": {
 		"xxxxx1": {
 			"name": "site1.com.au"
@@ -164,22 +190,17 @@ jobs:
 
 	return {
 		config: {
-			searchspringDir,
+			snapfuDir,
 			directories: {
 				components: {
 					recommendation: './src/components/Recommendations',
 					badge: './src/components/Badges',
 				},
 			},
-			patches: {
-				dir: path.join(searchspringDir, 'snapfu-patches'),
-				repoName: 'snapfu-patches',
-				repoUrl: `https://github.com/searchspring/snapfu-patches.git`,
-			},
 			library: {
-				dir: path.join(searchspringDir, 'snapfu-library'),
+				dir: path.join(snapfuDir, 'snapfu-library'),
 				repoName: 'snapfu-library',
-				repoUrl: `https://github.com/searchspring/snapfu-library.git`,
+				repoUrl: `https://github.com/AthosCommerce/snapfu-library.git`,
 			},
 		},
 		user,
@@ -368,7 +389,7 @@ export async function cli(args) {
 					break;
 
 				case 'fetch':
-					await setupPatchRepo(options);
+					await setupLibraryRepo(options);
 					break;
 
 				default:

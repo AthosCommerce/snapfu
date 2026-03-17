@@ -63,12 +63,25 @@ export const init = async (options) => {
 			});
 		}
 
-		const fetchScaffoldRepos = async () => {
+		const fetchScaffoldRepos = async ({ organization }) => {
 			// using search modifiers - https://docs.github.com/en/search-github/searching-on-github/searching-for-repositories
 			const searchOrgs = orgs
 				.concat(user.login)
 				.concat('searchspring')
+				.concat('AthosCommerce')
+				.filter((org) => {
+					if (organization === 'AthosCommerce') {
+						return org !== `searchspring`;
+					}
+					if (organization === 'searchspring') {
+						return org !== `AthosCommerce`;
+					}
+					return true;
+				})
 				.map((org) => `org:${org}`);
+
+			// topics based on org (are they in snap-implementations?)
+			const topic = orgs.includes('snap-implementations') ? '' : '-topic:internal';
 
 			let page = 0;
 			let per_page = 100;
@@ -77,7 +90,7 @@ export const init = async (options) => {
 			do {
 				page++;
 				response = await octokit.rest.search.repos({
-					q: `snapfu-scaffold-+archived:false+${searchOrgs.join('+')}`,
+					q: `snapfu-scaffold- ${topic}+archived:false+${searchOrgs.join('+')}`,
 					per_page,
 					page,
 				});
@@ -89,7 +102,19 @@ export const init = async (options) => {
 			return repos.filter((repo) => repo.name.startsWith(`snapfu-scaffold-`));
 		};
 
-		const snapfuScaffoldRepos = await fetchScaffoldRepos();
+		const questions0 = [
+			{
+				type: 'input',
+				name: 'siteId',
+				message: 'Please enter the siteId as found in the SMC console (a1b2c3):',
+				validate: (input) => {
+					return input && input.length > 0 && /^[0-9a-z]{6}$/.test(input);
+				},
+			},
+		];
+		const answers0 = await inquirer.prompt(questions0);
+
+		const snapfuScaffoldRepos = await fetchScaffoldRepos({ organization: answers0.siteId.startsWith('at') ? 'AthosCommerce' : 'searchspring' });
 
 		if (!snapfuScaffoldRepos?.length) {
 			console.log(chalk.red('Failed to fetch scaffolds. Please try again later or contact Athos support for assistance.'));
@@ -222,19 +247,6 @@ export const init = async (options) => {
 			scaffold.answers = await inquirer.prompt(advancedQuestions);
 		}
 
-		// ask for siteId (as this is used as a snapfu variable when copying over scaffold)
-		const questions3 = [
-			{
-				type: 'input',
-				name: 'siteId',
-				message: 'Please enter the siteId as found in the SMC console (a1b2c3):',
-				validate: (input) => {
-					return input && input.length > 0 && /^[0-9a-z]{6}$/.test(input);
-				},
-			},
-		];
-		const answers3 = await inquirer.prompt(questions3);
-
 		let useGitHubRepo = false;
 		let repositoryAnswers = {};
 
@@ -296,7 +308,7 @@ export const init = async (options) => {
 		}
 
 		// combined answers
-		const answers = { ...answers1, ...answers2, ...answers3, ...repositoryAnswers };
+		const answers = { ...answers0, ...answers1, ...answers2, ...repositoryAnswers };
 
 		// validate siteId and secretKey
 		if (answers.secretKey) {
@@ -452,7 +464,7 @@ export const init = async (options) => {
 
 		// save secretKey mapping to creds.json
 		if (answers.secretKey) {
-			await auth.saveSecretKey(answers.secretKey, answers.siteId, options.config.searchspringDir);
+			await auth.saveSecretKey(answers.secretKey, answers.siteId, options.config.snapfuDir);
 		}
 
 		// Set repository secret and branch protection
@@ -599,7 +611,7 @@ export const setRepoSecret = async function (options, details) {
 			const value = secretKey;
 			let secret_name = 'WEBSITE_SECRET_KEY';
 
-			if (typeof initContext.searchspring.siteId === 'object') {
+			if (typeof initContext.integration.siteId === 'object') {
 				secret_name = `WEBSITE_SECRET_KEY_${siteId.toUpperCase()}`; // github converts to uppercase, setting explicitly for the logging
 			}
 

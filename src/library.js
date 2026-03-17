@@ -2,7 +2,7 @@
 	Current commands utilizing components:
 	* recs init
 	
-	snapfu-library https://github.com/searchspring/snapfu-library
+	snapfu-library https://github.com/AthosCommerce/snapfu-library
 */
 
 import { existsSync, mkdirSync, promises as fsp, statSync } from 'fs';
@@ -15,8 +15,8 @@ import { commandOutput } from './utils/index.js';
 export const setupLibraryRepo = async (options) => {
 	// clone or pull snapfu library repository
 	try {
-		if (!existsSync(options.config.searchspringDir)) {
-			mkdirSync(options.config.searchspringDir);
+		if (!existsSync(options.config.snapfuDir)) {
+			mkdirSync(options.config.snapfuDir);
 		}
 		if (existsSync(options.config.library.dir)) {
 			const { stdout, stderr } = await commandOutput(`git pull`, options.config.library.dir);
@@ -28,7 +28,7 @@ export const setupLibraryRepo = async (options) => {
 		} else {
 			const { stdout, stderr } = await commandOutput(
 				`git clone ${options.config.library.repoUrl} ${options.config.library.repoName}`,
-				options.config.searchspringDir
+				options.config.snapfuDir
 			);
 
 			if (options.dev) {
@@ -64,27 +64,25 @@ export const buildLibrary = async (options) => {
 	*/
 
 	const { context } = options;
-	const { searchspring } = context;
+	const { integration } = context;
 
-	if (!searchspring || !context.project.path) {
+	if (!integration || !context.project.path) {
 		console.log(chalk.red(`Error: No Snap project found in ${process.cwd()}.`));
 		return;
 	}
 
-	const { framework } = searchspring || {};
+	const { framework } = integration || {};
 
-	// ~/.searchspring/snapfu-library/{framework}
-	const frameworkPath = path.join(options.config.library.dir, framework);
+	// ~/.athoscommerce/snapfu-library/[athos | searchspring]/{framework}
+	const frameworkPath = path.join(options.config.library.dir, options.context.project.org, framework);
 	const frameworkDirExists = existsSync(frameworkPath);
 	const library = {};
 
 	if (frameworkDirExists) {
 		const components = await buildLibraryComponents(path.join(frameworkPath, 'components'), options);
-		// const patches = buildLibraryPatches(path);
 
 		library[framework] = {
 			components,
-			// patches,
 		};
 	}
 
@@ -92,7 +90,7 @@ export const buildLibrary = async (options) => {
 };
 
 export const buildLibraryComponents = async (dir, options) => {
-	// ~/.searchspring/snapfu-library/{framework}/{components}
+	// ~/.athoscommerce/snapfu-library/[athos | searchspring]/{framework}/{components}
 	const componentsDirContents = await fsp.readdir(dir);
 
 	const components = {};
