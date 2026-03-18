@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.16.0](https://github.com/AthosCommerce/snapfu/compare/v1.14.0...v1.16.0) (2026-03-18)
+
+
+### Features
+
+* add athos support, verify siteIds in package.json, refactor context ([0719364](https://github.com/AthosCommerce/snapfu/commit/0719364cec162538cac54fc066f783175c3f99f1))
+
+
+### Bug Fixes
+
+* **context:** adjusting code to ensure some commands can be run without project context ([ad44340](https://github.com/AthosCommerce/snapfu/commit/ad44340fc316f2915c42f76b03cef6a15d40c5c1))
+* pr feedback ([0e5f49c](https://github.com/AthosCommerce/snapfu/commit/0e5f49cdb7edef5d88f2d9f5db818b30eb3fb7d9))
+
 ## [1.15.0](https://github.com/searchspring/snapfu/compare/v1.14.0...v1.15.0) (2026-03-17)
 
 
