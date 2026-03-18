@@ -6,6 +6,10 @@
 	"description": "Command line interface for Snap!",
 	"main": "src/index.js",
 	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/AthosCommerce/snapfu.git"
+	},
 	"prettier": "@searchspring/prettier",
 	"bin": {
 		"snapfu": "bin/snapfu.js"
