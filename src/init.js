@@ -22,7 +22,7 @@ export const createDir = (dir) => {
 			mkdirSync(dir);
 		}
 
-		let folderName = dir.substring(dir.lastIndexOf('/') + 1);
+		let folderName = path.basename(dir);
 		let files = readdirSync(dir);
 
 		if (files.length !== 0) {
@@ -666,7 +666,7 @@ export const cloneAndCopyRepo = async function (sourceRepo, destination, exclude
 		const excludeList = ['.git', 'snapfu.config.yml'];
 
 		// filter out files in the exclude list
-		options.filter = (name) => excludeList.every((entry) => name != `${folder}/${entry}`);
+		options.filter = (name) => excludeList.every((entry) => name != path.join(folder, entry));
 	}
 
 	if (variables) {
