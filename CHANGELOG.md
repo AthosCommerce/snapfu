@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.16.1](https://github.com/AthosCommerce/snapfu/compare/v1.16.0...v1.16.1) (2026-04-22)
+
+
+### Bug Fixes
+
+* **cli:** updating some path usages to ensure compatibility with Windows OS ([2118e19](https://github.com/AthosCommerce/snapfu/commit/2118e19896d15f4ed821daae72bede1b298335d4))
+
 ## [1.16.0](https://github.com/AthosCommerce/snapfu/compare/v1.14.0...v1.16.0) (2026-03-18)
 
 

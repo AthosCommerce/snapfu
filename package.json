@@ -1,6 +1,6 @@
 {
 	"name": "snapfu",
-	"version": "1.16.0",
+	"version": "1.16.1",
 	"author": "Athos Commerce",
 	"license": "MIT",
 	"description": "Command line interface for Snap!",
