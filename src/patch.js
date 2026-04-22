@@ -295,7 +295,7 @@ const runPatch = async (options, patchFile) => {
 	if (options.options.updater && runInAction === true) {
 		console.log(chalk.blue(`${path.basename(patchFile)}... skipping due to runInAction`));
 		// adds a new line to README.md so that the updater can create a branch
-		await commandOutput(`echo "" >> README.md`);
+		await fsp.appendFile('README.md', '\n');
 		return;
 	}
 

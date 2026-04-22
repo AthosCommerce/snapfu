@@ -136,7 +136,7 @@ export const buildLibraryComponents = async (dir, options) => {
 							let parsedComponentDescriptorYaml;
 							if (componentDescriptorYaml.length) {
 								try {
-									parsedComponentDescriptorYaml = YAML.parse(await fsp.readFile(`${componentFilePath}/${componentDescriptorYaml}`, 'utf8'));
+									parsedComponentDescriptorYaml = YAML.parse(await fsp.readFile(path.join(componentFilePath, `${componentDescriptorYaml}`), 'utf8'));
 								} catch (err) {
 									console.log(chalk.red(`Failed to parse ${componentDescriptorYaml} contents...\n`));
 									console.log(err);
