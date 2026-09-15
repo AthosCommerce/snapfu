@@ -147,7 +147,7 @@ export class ConfigApi {
 			},
 		});
 
-		return await this.handleResponse(response, 'archiveTemplate');
+		return await this.handleResponse(response, 'archiveTemplate', payload);
 	}
 	async archiveBadgeTemplate({ payload, siteId }) {
 		const apiPath = `${this.getHost(siteId)}/api/badgeTemplate`;
@@ -162,10 +162,10 @@ export class ConfigApi {
 			},
 		});
 
-		return await this.handleResponse(response, 'archiveBadgeTemplate');
+		return await this.handleResponse(response, 'archiveBadgeTemplate', payload);
 	}
 
-	async handleResponse(response, method) {
+	async handleResponse(response, method, payload = {}) {
 		if (response.status == 200) {
 			return await response.json();
 		} else if (response.status == 401) {
@@ -183,7 +183,8 @@ export class ConfigApi {
 		} else if (response.status == 405) {
 			throw new Error(`Server method not allowed.`);
 		} else if (response.status == 409) {
-			if (method === 'archiveBadgeTemplate') {
+			if (method === 'archiveBadgeTemplate' || method === 'archiveTemplate') {
+				// the server explains the conflict, e.g. "template in use by profile: Home Page"
 				const text = (await response.text()).trim();
 				throw new Error(`Cannot archive ${text}`);
 			} else {

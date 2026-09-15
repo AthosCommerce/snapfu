@@ -278,5 +278,43 @@ describe('ConfigApi Class', () => {
 
 			fetch.mockRestore();
 		});
+
+		it('names the template and branch when the server responds 404', async () => {
+			fetch.mockReturnValue(Promise.resolve(new Response('could not find template with name recs__production\n', { status: 404 })));
+
+			const api = new ConfigApi('secret', { dev: true });
+
+			await expect(api.archiveTemplate({ payload: { name: 'recs', branch: 'production' }, siteId: 'abc123' })).rejects.toThrow(
+				"Template 'recs' not found. Ensure correct branch and template name is specified."
+			);
+
+			fetch.mockRestore();
+		});
+
+		it('surfaces the server conflict message when the template is in use', async () => {
+			fetch.mockReturnValue(Promise.resolve(new Response('template in use by profile: Home Page Recs\n', { status: 409 })));
+
+			const api = new ConfigApi('secret', { dev: true });
+
+			await expect(api.archiveTemplate({ payload: { name: 'recs', branch: 'production' }, siteId: 'abc123' })).rejects.toThrow(
+				'Cannot archive template in use by profile: Home Page Recs'
+			);
+
+			fetch.mockRestore();
+		});
+	});
+
+	describe('archiveBadgeTemplate method', () => {
+		it('names the template when the server responds 404', async () => {
+			fetch.mockReturnValue(Promise.resolve(new Response('', { status: 404 })));
+
+			const api = new ConfigApi('secret', { dev: true });
+
+			await expect(api.archiveBadgeTemplate({ payload: { name: 'sale' }, siteId: 'abc123' })).rejects.toThrow(
+				"Template 'sale' not found. Ensure correct template name is specified."
+			);
+
+			fetch.mockRestore();
+		});
 	});
 });
