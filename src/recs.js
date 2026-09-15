@@ -4,7 +4,7 @@ import path from 'path';
 import fs, { promises as fsp } from 'fs';
 import { exit } from 'process';
 import { help } from './help.js';
-import { wait, copy, copyTransform, pascalCase, handleize } from './utils/index.js';
+import { wait, copy, copyTransform, pascalCase, handleize, validateTemplateParameters } from './utils/index.js';
 import { DEFAULT_BRANCH } from './init.js';
 import { ConfigApi } from './services/ConfigApi.js';
 import { buildLibrary } from './library.js';
@@ -405,50 +405,13 @@ export async function syncTemplate(options) {
 
 	const templates = await getTemplates(context.project.path);
 	const syncTemplates = templates.filter((template) => {
-		//lets validate all the details are valid before we sync
-		let invalidParam;
-		Object.keys(template.details).forEach(function (detail) {
-			if (typeof template.details[detail] !== 'string') {
-				if (detail == 'parameters') {
-					template.details[detail].map((index) => {
-						Object.keys(index).forEach(function (parameters) {
-							if (typeof index[parameters] !== 'string') {
-								invalidParam = `${detail}: { ${parameters}: ${index[parameters]} }`;
-							}
-						});
-					});
-				} else {
-					invalidParam = `${detail} ${template.details[detail]}`;
-				}
-			}
-		});
+		// validate all the details are valid before we sync (exits when invalid)
+		validateTemplate(template);
 
-		if (invalidParam) {
-			console.log(
-				chalk.red(`
-Error: Invalid template configuration found on template ${chalk.white.underline(template.details.name)}!`)
-			);
-			console.log(
-				chalk.cyanBright(`
-			
-${invalidParam}
-			
-			`)
-			);
-			console.log(
-				chalk.whiteBright(`Please ensure all template config values are strings.
-		
-			`)
-			);
-			//Stop everything
-			exit(1);
-		} else {
-			if (templateName) {
-				if (template.details.name == templateName) return template;
-			} else {
-				return template;
-			}
+		if (templateName) {
+			return template.details.name == templateName;
 		}
+		return true;
 	});
 
 	if (!syncTemplates.length) {
@@ -468,15 +431,19 @@ ${invalidParam}
 			console.log(chalk.grey(`\n\tsnapfu secrets add\n`));
 			return;
 		}
-		const payload = buildTemplatePayload(template.details, { branch: branchName, framework: integration.framework });
-
-		if (payload.name && !payload.name.match(/^[a-zA-Z0-9_-]*$/)) {
-			console.log(chalk.red(`Error: Template name must be an alphanumeric string (underscore and dashes also supported).`));
-			return;
-		}
+		const payload = buildTemplatePayload(template.details, {
+			branch: branchName,
+			framework: integration.framework,
+			distribution: context.project.distribution,
+		});
 
 		try {
-			await new ConfigApi(secretKey, options).putTemplate({ payload, siteId });
+			const { message } = await new ConfigApi(secretKey, options).putTemplate({ payload, siteId });
+			if (message && message !== 'success') {
+				console.log(chalk.red(`        ${template.details.name}`), chalk.blue(`[${branchName}]`));
+				console.log('        ', chalk.red(message));
+				exit(1);
+			}
 			console.log(chalk.green(`        ${template.details.name}`), chalk.blue(`[${branchName}]`));
 		} catch (err) {
 			console.log(chalk.red(`        ${template.details.name}`), chalk.blue(`[${branchName}]`));
@@ -512,6 +479,69 @@ ${invalidParam}
 	}
 }
 
+export function validateTemplate(template) {
+	const requiredParams = ['type', 'name', 'label', 'component'];
+	let invalidParam = [];
+	requiredParams.forEach((requiredParam) => {
+		if (!(requiredParam in template.details)) {
+			invalidParam.push(`template paramater '${requiredParam}' is required`);
+		}
+	});
+	if (invalidParam.length) {
+		// log missing template parameters first
+		console.log(chalk.gray(template.path));
+		console.log(chalk.red(`Error: at Template ${template.details?.name ? `'${template.details?.name}' ` : ''}has the following issues:`));
+		invalidParam.forEach((param) => {
+			console.log('\t - ' + chalk.cyanBright(`${param}`));
+		});
+		exit(1);
+	}
+
+	Object.keys(template.details).forEach((detail) => {
+		// validate each parameter
+		switch (detail) {
+			case 'type':
+				// handled by getTemplates - would not reach here.
+				// case statement still required to be here for default statement handling unknown parameters
+				break;
+			case 'name':
+				if (typeof template.details[detail] !== 'string' || !template.details[detail].match(/^[a-zA-Z0-9_-]*$/) || !template.details[detail]) {
+					invalidParam.push(`template paramater '${detail}' must be an alphanumeric string (underscore and dashes also supported)`);
+				}
+				break;
+			case 'label':
+			case 'description':
+			case 'component':
+			case 'orientation':
+				if (typeof template.details[detail] !== 'string') {
+					invalidParam.push(`template paramater '${detail}' must be a string`);
+				}
+				break;
+			case 'version':
+				if (typeof template.details[detail] !== 'string' || !template.details[detail]) {
+					invalidParam.push(`template paramater '${detail}' must be a string with a value`);
+				}
+				break;
+			case 'parameters':
+				// parameter 'type' is required when the template specifies a version
+				invalidParam.push(...validateTemplateParameters(template.details[detail], detail, { requireType: 'version' in template.details }));
+				break;
+			default:
+				invalidParam.push(`unknown template parameter '${detail}' should be removed`);
+				break;
+		}
+	});
+	if (invalidParam.length) {
+		console.log(chalk.gray(template.path));
+		console.log(chalk.red(`Error: at Template ${template.details?.name ? `'${template.details?.name}' ` : ''}has the following issues:`));
+		invalidParam.forEach((param) => {
+			console.log('\t - ' + chalk.cyanBright(`${param}`));
+		});
+		exit(1);
+	}
+	return true;
+}
+
 export function generateTemplateSettings({ name, description, type }) {
 	let settings = {
 		type,
@@ -519,6 +549,7 @@ export function generateTemplateSettings({ name, description, type }) {
 		label: name,
 		description: description || `${name} custom template`,
 		component: `${pascalCase(name)}`,
+		version: '2',
 	};
 	if (type.indexOf('email') == -1) {
 		settings = {
@@ -527,6 +558,7 @@ export function generateTemplateSettings({ name, description, type }) {
 			parameters: [
 				{
 					name: 'title',
+					type: 'string',
 					label: 'Title',
 					description: 'text used for the heading',
 					defaultValue: 'Recommended Products',
@@ -642,13 +674,13 @@ export async function findJsonFiles(dir) {
 }
 
 export function buildTemplatePayload(template, vars) {
-	return {
+	const payload = {
 		name: template.name,
 		type: template.type,
 		component: template.component,
 		meta: {
 			searchspringTemplate: {
-				type: 'snap',
+				type: (vars.distribution || 'Snap').toLowerCase(),
 				label: template.label,
 				description: template.description,
 			},
@@ -667,4 +699,8 @@ export function buildTemplatePayload(template, vars) {
 		},
 		parameters: template.parameters,
 	};
+	if (template.version) {
+		payload.version = template.version;
+	}
+	return payload;
 }

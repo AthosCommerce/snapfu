@@ -21,14 +21,15 @@ snapfu <command> <args> [--options]
 ## Commands
 
 ### `init` - Create a new snap project
+
 Creates a new snap project (optional directory)
 
 ```bash
 snapfu init <directory>
 ```
 
-
 ### `badges` - Badge template management
+
 Manage badge templates for your project
 
 ```bash
@@ -36,6 +37,7 @@ snapfu badges <command> <args> [--options]
 ```
 
 **Subcommands:**
+
 - `init` - Initialize badge template in current project
 - `list [local | remote]` - Display list of badge templates (local or remote)
 - `archive <name>` - Remove remote badge template
@@ -44,6 +46,7 @@ snapfu badges <command> <args> [--options]
   - `--secret-key <key>` - Secret key for authentication
 
 ### `recs` - Recommendation template management
+
 Manage recommendation templates for your project
 
 ```bash
@@ -51,6 +54,7 @@ snapfu recs <command> <args> [--options]
 ```
 
 **Subcommands:**
+
 - `init` - Initialize recommendation template in current project
 - `list [local | remote]` - Display list of recommendation templates (local or remote)
 - `archive <name> <branch>` - Remove remote recommendation template (optional branch)
@@ -58,7 +62,11 @@ snapfu recs <command> <args> [--options]
 - `sync <name> <branch>` - Synchronize recommendation template and parameters with remote (optional branch)
   - `--secret-key <key>` - Secret key for authentication
 
+**Template versioning:**
+Recommendation template JSON files that include a `version` property (e.g. `"version": "2"`) are stored in the new template schema when synced. Versioned templates require every entry in `parameters` to include a `type` - one of `array`, `string`, `color`, `url`, `integer`, `decimal`, `boolean`, `checkbox`, `toggle` - and parameters are validated with the same rules as badge template parameters (see `defaultValue`, `validations` and `options`). Templates without a `version` continue to sync to the legacy schema, and their parameters are only validated when a `type` is present. `snapfu recs init` generates versioned templates.
+
 ### `secrets` - Project secret management
+
 Manage secrets in your snap project
 
 ```bash
@@ -66,11 +74,13 @@ snapfu secrets <command> <args> [--options]
 ```
 
 **Subcommands:**
+
 - `add` - Adds secrets to snap project
 - `update` - Update secrets in snap project
 - `verify` - Verify secrets in snap project
 
 ### `patch` - Apply patches to update project
+
 Apply patches to update your project
 
 ```bash
@@ -78,6 +88,7 @@ snapfu patch <command> <args> [--options]
 ```
 
 **Subcommands:**
+
 - `apply` - Apply patch version (version or latest)
   - `--ci` - Run without interactive prompts
   - `--scaffold` - Patch a scaffold project (skips siteId validation)
@@ -87,6 +98,7 @@ snapfu patch <command> <args> [--options]
   - `--scaffold` - Target a scaffold project (skips siteId validation)
 
 ### `login` - OAuth with GitHub
+
 OAuths with GitHub to allow for creating repositories when using the init command
 
 ```bash
@@ -94,6 +106,7 @@ snapfu login
 ```
 
 ### `logout` - Remove login credentials
+
 Removes login credentials
 
 ```bash
@@ -101,6 +114,7 @@ snapfu logout
 ```
 
 ### `org-access` - Review organization access
+
 Review and change organization access for the tool
 
 ```bash
@@ -108,6 +122,7 @@ snapfu org-access
 ```
 
 ### `whoami` - Show current user
+
 Shows the current user
 
 ```bash
@@ -115,6 +130,7 @@ snapfu whoami
 ```
 
 ### `about` - Show versioning
+
 Shows versioning information
 
 ```bash
@@ -122,6 +138,7 @@ snapfu about
 ```
 
 ### `help` - Display help text
+
 Display help text (optional command)
 
 ```bash
@@ -131,16 +148,19 @@ snapfu help [<command>]
 ## Getting Started
 
 1. **Install snapfu globally:**
+
    ```bash
    npm install -g snapfu
    ```
 
 2. **Login (optional):**
+
    ```bash
    snapfu login
    ```
 
 3. **Create a new project:**
+
    ```bash
    snapfu init my-awesome-website
    ```
@@ -176,11 +196,13 @@ https://snapui.athoscommerce.io/<siteId>/my-branch/bundle.js
 You can modify the file `deploy.yml` in your generated project under `my-awesome-website/.github/workflows/deploy.yml` to complete different actions if you don't want to use the Athos Commerce build process or don't have access to it.
 
 ### SCP
+
 Deploy the built artifacts using `scp`. [https://github.com/marketplace/actions/scp-command-to-transfer-files](https://github.com/marketplace/actions/scp-command-to-transfer-files)
 
 ### Google Cloud
+
 Deploy to GCP using `gcloud`. [https://github.com/marketplace/actions/setup-gcloud-environment](https://github.com/marketplace/actions/setup-gcloud-environment)
 
 ### SFTP
-Deploy a built artifacts through SFTP. [https://github.com/marketplace/actions/sftp-deploy](https://github.com/marketplace/actions/sftp-deploy)
 
+Deploy a built artifacts through SFTP. [https://github.com/marketplace/actions/sftp-deploy](https://github.com/marketplace/actions/sftp-deploy)

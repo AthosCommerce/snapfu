@@ -1,4 +1,12 @@
-import { buildTemplatePayload, findJsonFiles, readTemplateSettings, writeTemplateFile, getTemplates, generateTemplateSettings } from './recs';
+import {
+	buildTemplatePayload,
+	findJsonFiles,
+	readTemplateSettings,
+	writeTemplateFile,
+	getTemplates,
+	generateTemplateSettings,
+	validateTemplate,
+} from './recs';
 import { pascalCase } from './utils/index.js';
 import tempDirectory from 'temp-dir';
 import fs from 'fs-extra';
@@ -96,6 +104,10 @@ describe('generateTemplateSettings function', () => {
 		expect(settings).toHaveProperty('component', pascalCase(name));
 		expect(settings).toHaveProperty('orientation');
 		expect(settings).toHaveProperty('parameters');
+		expect(settings).toHaveProperty('version', '2');
+		settings.parameters.forEach((parameter) => {
+			expect(parameter).toHaveProperty('type');
+		});
 	});
 
 	it('returns a correct properties if email type', async () => {
@@ -196,6 +208,214 @@ describe('buildTemplatePayload function', () => {
 		expect(transformed).toHaveProperty('component');
 		expect(transformed).toHaveProperty('meta');
 		expect(transformed).toHaveProperty('parameters');
+		expect(transformed).not.toHaveProperty('version');
+	});
+
+	it('includes version in the payload when the template specifies one', async () => {
+		const vars = { branch: 'my-branch', framework: 'preact' };
+
+		const transformed = buildTemplatePayload({ ...mockTemplateSettings, version: '2' }, vars);
+		expect(transformed).toHaveProperty('version', '2');
+	});
+
+	it('uses the project distribution for the template type', async () => {
+		const snapVars = { branch: 'my-branch', framework: 'preact', distribution: 'Snap' };
+		const snapPayload = buildTemplatePayload(mockTemplateSettings, snapVars);
+		expect(snapPayload.meta.searchspringTemplate.type).toBe('snap');
+
+		const templatesVars = { branch: 'my-branch', framework: 'preact', distribution: 'SnapTemplates' };
+		const templatesPayload = buildTemplatePayload(mockTemplateSettings, templatesVars);
+		expect(templatesPayload.meta.searchspringTemplate.type).toBe('snaptemplates');
+	});
+
+	it('defaults the template type to snap when no distribution is provided', async () => {
+		const vars = { branch: 'my-branch', framework: 'preact' };
+		const transformed = buildTemplatePayload(mockTemplateSettings, vars);
+		expect(transformed.meta.searchspringTemplate.type).toBe('snap');
+	});
+});
+
+describe('validateTemplate function', () => {
+	const mockVersionedTemplateSettings = {
+		...mockTemplateSettings,
+		version: '2',
+		parameters: [
+			{
+				name: 'title',
+				type: 'string',
+				label: 'Title',
+				description: 'text used for the heading',
+				defaultValue: 'Recommended Products',
+				validations: {
+					min: 1,
+					max: 50,
+				},
+			},
+			{
+				name: 'layout',
+				type: 'array',
+				label: 'Layout',
+				description: 'layout of the results',
+				defaultValue: 'carousel',
+				options: ['carousel', 'grid'],
+			},
+		],
+	};
+
+	it('valid template without version and untyped parameters', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+		const template = {
+			details: mockTemplateSettings,
+		};
+		const result = validateTemplate(template);
+		expect(result).toBe(true);
+
+		expect(mockConsoleLog).toHaveBeenCalledTimes(0);
+		mockConsoleLog.mockRestore();
+	});
+
+	it('valid template with version and typed parameters', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+		const template = {
+			details: mockVersionedTemplateSettings,
+		};
+		const result = validateTemplate(template);
+		expect(result).toBe(true);
+
+		expect(mockConsoleLog).toHaveBeenCalledTimes(0);
+		mockConsoleLog.mockRestore();
+	});
+
+	it('invalid template - missing required keys', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+		const mockExit = jest.spyOn(process, 'exit').mockImplementation((number) => {
+			throw new Error('process.exit: ' + number);
+		});
+
+		const template = {
+			details: {
+				...mockTemplateSettings,
+			},
+		};
+		const toDelete = ['type', 'name', 'label', 'component'];
+		toDelete.forEach((key) => {
+			delete template.details[key];
+		});
+
+		expect(() => {
+			validateTemplate(template);
+		}).toThrow();
+
+		expect(mockConsoleLog).toHaveBeenCalledTimes(2 + toDelete.length);
+		toDelete.forEach((key) => {
+			expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining(`template paramater '${key}' is required`));
+		});
+		mockConsoleLog.mockRestore();
+
+		expect(mockExit).toHaveBeenCalledWith(1);
+		mockExit.mockRestore();
+	});
+
+	it('invalid template - invalid types', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+		const mockExit = jest.spyOn(process, 'exit').mockImplementation((number) => {
+			throw new Error('process.exit: ' + number);
+		});
+
+		const invalidOverrides = {
+			name: 'nonAlph@Numer!c', // should be alphanumeric
+			label: 123, // must be a string
+			description: 123, // must be a string
+			component: 123, // must be a string
+			orientation: 123, // must be a string
+			version: 123, // must be a string
+			parameters: 123, // must be an array
+			unknown: 123, // unknown key
+		};
+		const template = {
+			details: {
+				...mockTemplateSettings,
+				...invalidOverrides,
+			},
+		};
+
+		expect(() => {
+			validateTemplate(template);
+		}).toThrow();
+
+		expect(mockConsoleLog).toHaveBeenCalledTimes(2 + Object.keys(invalidOverrides).length);
+		expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining(`template paramater 'name' must be an alphanumeric string`));
+		expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining(`template paramater 'parameters' must be an array`));
+		expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining(`unknown template parameter 'unknown' should be removed`));
+		mockConsoleLog.mockRestore();
+
+		expect(mockExit).toHaveBeenCalledWith(1);
+		mockExit.mockRestore();
+	});
+
+	it('invalid template - parameter type required when version provided', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+		const mockExit = jest.spyOn(process, 'exit').mockImplementation((number) => {
+			throw new Error('process.exit: ' + number);
+		});
+
+		const template = {
+			details: {
+				...mockTemplateSettings,
+				version: '2',
+			},
+		};
+
+		expect(() => {
+			validateTemplate(template);
+		}).toThrow();
+
+		// two logs for the error header, one for the missing type parameter
+		expect(mockConsoleLog).toHaveBeenCalledTimes(3);
+		expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining(`template paramater 'parameters[0].type' is required`));
+		mockConsoleLog.mockRestore();
+
+		expect(mockExit).toHaveBeenCalledWith(1);
+		mockExit.mockRestore();
+	});
+
+	it('invalid template - parameter validation matches badges', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+		const mockExit = jest.spyOn(process, 'exit').mockImplementation((number) => {
+			throw new Error('process.exit: ' + number);
+		});
+
+		const template = {
+			details: {
+				...mockVersionedTemplateSettings,
+				parameters: [
+					{
+						name: 'layout',
+						type: 'array',
+						label: 'Layout',
+						description: 'layout of the results',
+						defaultValue: 'blah', // not one of the options
+						options: ['carousel', 'grid'],
+					},
+				],
+			},
+		};
+
+		expect(() => {
+			validateTemplate(template);
+		}).toThrow();
+
+		// two logs for the error header, one for the invalid defaultValue
+		expect(mockConsoleLog).toHaveBeenCalledTimes(3);
+		expect(mockConsoleLog).toHaveBeenCalledWith(
+			expect.stringContaining(`template paramater 'parameters[0].defaultValue' must be one of the options in 'options' array`)
+		);
+		mockConsoleLog.mockRestore();
+
+		expect(mockExit).toHaveBeenCalledWith(1);
+		mockExit.mockRestore();
 	});
 });
 

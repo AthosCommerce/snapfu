@@ -12,16 +12,16 @@ export class ConfigApi {
 	constructor(secretKey, options = {}) {
 		this.secretKey = secretKey || '';
 
-		if (options.dev) {
-			this.host = DEV_API_HOST;
-		}
 		if (options.zone === 'athos') {
 			this.host = ATHOS_API_HOST;
+		}
+		if (options.dev) {
+			this.host = DEV_API_HOST;
 		}
 	}
 
 	getHost(siteId = '') {
-		if (this.host !== ATHOS_API_HOST && siteId && siteId.startsWith('at')) {
+		if (this.host !== ATHOS_API_HOST && this.host !== DEV_API_HOST && siteId && siteId.startsWith('at')) {
 			return ATHOS_API_HOST;
 		}
 		return this.host;
@@ -147,7 +147,7 @@ export class ConfigApi {
 			},
 		});
 
-		return await this.handleResponse(response, 'archiveTemplate');
+		return await this.handleResponse(response, 'archiveTemplate', payload);
 	}
 	async archiveBadgeTemplate({ payload, siteId }) {
 		const apiPath = `${this.getHost(siteId)}/api/badgeTemplate`;
@@ -162,10 +162,10 @@ export class ConfigApi {
 			},
 		});
 
-		return await this.handleResponse(response, 'archiveBadgeTemplate');
+		return await this.handleResponse(response, 'archiveBadgeTemplate', payload);
 	}
 
-	async handleResponse(response, method) {
+	async handleResponse(response, method, payload = {}) {
 		if (response.status == 200) {
 			return await response.json();
 		} else if (response.status == 401) {
@@ -183,7 +183,8 @@ export class ConfigApi {
 		} else if (response.status == 405) {
 			throw new Error(`Server method not allowed.`);
 		} else if (response.status == 409) {
-			if (method === 'archiveBadgeTemplate') {
+			if (method === 'archiveBadgeTemplate' || method === 'archiveTemplate') {
+				// the server explains the conflict, e.g. "template in use by profile: Home Page"
 				const text = (await response.text()).trim();
 				throw new Error(`Cannot archive ${text}`);
 			} else {
@@ -199,7 +200,7 @@ export class ConfigApi {
 			if (message) {
 				return { message };
 			} else {
-				throw new Error(err);
+				throw new Error(`Unhandled response (status ${response.status})`);
 			}
 		}
 	}
