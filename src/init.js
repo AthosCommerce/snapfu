@@ -457,11 +457,6 @@ export const init = async (options) => {
 			console.log(`${chalk.cyan(scaffold.http)}\n`);
 		}
 
-		// waiting here due to copyPromise function resolving before scaffold is actually copied
-		// TODO: look into why ncp does not like our filtering (does not resolve promise in callback)
-		// wait...
-		await wait(1000);
-
 		// save secretKey mapping to creds.json
 		if (answers.secretKey) {
 			await auth.saveSecretKey(answers.secretKey, answers.siteId, options.config.snapfuDir);
