@@ -476,23 +476,25 @@ export const init = async (options) => {
 
 			// push the scaffold to the default branch BEFORE branch protection is applied (direct pushes are blocked afterwards)
 			// the secret is set first so that the workflow triggered by this push has access to it
-			const pushed = await pushScaffold(options, { dir, scaffold: answers.scaffold });
+			if (!options.dev && answers.organization === 'snap-implementations') {
+				const pushed = await pushScaffold(options, { dir, scaffold: answers.scaffold });
 
-			await setBranchProtection(options, { organization: answers.organization, name: answers.name });
+				await setBranchProtection(options, { organization: answers.organization, name: answers.name });
 
-			if (!pushed && !options.dev) {
-				// branch protection may now be in place, so recovery must go through a branch and pull request
-				console.log(
-					chalk.yellow(
-						`The scaffold was not pushed to ${DEFAULT_BRANCH}. To recover, push it via a branch and pull request from within ${folderName}:`
-					)
-				);
-				console.log(
-					chalk.grey(
-						`\n\tgit checkout -b development\n\tgit add -A && git commit -m "Initialized from ${answers.scaffold}"\n\tgit push -u origin development\n`
-					)
-				);
-				console.log(chalk.yellow(`Then open a pull request from development into ${DEFAULT_BRANCH}.\n`));
+				if (!pushed && !options.dev) {
+					// branch protection may now be in place, so recovery must go through a branch and pull request
+					console.log(
+						chalk.yellow(
+							`The scaffold was not pushed to ${DEFAULT_BRANCH}. To recover, push it via a branch and pull request from within ${folderName}:`
+						)
+					);
+					console.log(
+						chalk.grey(
+							`\n\tgit checkout -b development\n\tgit add -A && git commit -m "Initialized from ${answers.scaffold}"\n\tgit push -u origin development\n`
+						)
+					);
+					console.log(chalk.yellow(`Then open a pull request from development into ${DEFAULT_BRANCH}.\n`));
+				}
 			}
 		}
 
@@ -523,7 +525,7 @@ export const init = async (options) => {
 
 export const pushScaffold = async function (options, details) {
 	const { dir, scaffold } = details;
-	const commitMessage = `Initialized from ${scaffold}`;
+	const commitMessage = `Initialized from ${scaffold} - [skip actions]`;
 
 	if (options.dev) {
 		console.log(chalk.yellow('skipping push of scaffold to remote repository'));
