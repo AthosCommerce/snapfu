@@ -153,6 +153,71 @@ describe('copy', () => {
 		expect(await fs.readFile(path.join(destination, 'src', 'index.js'), 'utf8')).toEqual('1');
 	});
 
+	it('replaces a symlinked directory in the destination when clobber is true', async () => {
+		const source = await tmp();
+		const destination = await tmp();
+		const outside = await tmp();
+		await writeTree(source, { src: { 'index.js': 'scaffold' } });
+		await fs.symlink(outside, path.join(destination, 'src'));
+
+		await copy(source, destination, { clobber: true });
+
+		expect((await fs.lstat(path.join(destination, 'src'))).isSymbolicLink()).toBe(false);
+		expect(await readTree(destination)).toEqual({ src: { 'index.js': 'scaffold' } });
+		expect(await fs.readdir(outside)).toEqual([]);
+	});
+
+	it('copies through a symlinked directory in the destination when clobber is false', async () => {
+		const source = await tmp();
+		const destination = await tmp();
+		const outside = await tmp();
+		await writeTree(source, { src: { 'index.js': 'scaffold', 'existing.js': 'scaffold' } });
+		await writeTree(outside, { 'existing.js': 'existing' });
+		await fs.symlink(outside, path.join(destination, 'src'));
+
+		await copy(source, destination, { clobber: false });
+
+		expect((await fs.lstat(path.join(destination, 'src'))).isSymbolicLink()).toBe(true);
+		expect(await readTree(outside)).toEqual({ 'index.js': 'scaffold', 'existing.js': 'existing' });
+	});
+
+	it('replaces a symlinked file in the destination when clobber is true', async () => {
+		const source = await tmp();
+		const destination = await tmp();
+		const outside = await tmp();
+		await writeTree(source, { 'README.md': 'scaffold' });
+		await writeTree(outside, { 'real.md': 'existing' });
+		await fs.symlink(path.join(outside, 'real.md'), path.join(destination, 'README.md'));
+
+		await copy(source, destination, { clobber: true });
+
+		expect((await fs.lstat(path.join(destination, 'README.md'))).isSymbolicLink()).toBe(false);
+		expect(await readTree(destination)).toEqual({ 'README.md': 'scaffold' });
+		expect(await readTree(outside)).toEqual({ 'real.md': 'existing' });
+	});
+
+	it('replaces a file in the way of a directory when clobber is true', async () => {
+		const source = await tmp();
+		const destination = await tmp();
+		await writeTree(source, { src: { 'index.js': 'scaffold' } });
+		await writeTree(destination, { src: 'i am a file' });
+
+		await copy(source, destination, { clobber: true });
+
+		expect(await readTree(destination)).toEqual({ src: { 'index.js': 'scaffold' } });
+	});
+
+	it('skips a directory blocked by a file when clobber is false', async () => {
+		const source = await tmp();
+		const destination = await tmp();
+		await writeTree(source, { src: { 'index.js': 'scaffold' }, 'other.js': 'scaffold' });
+		await writeTree(destination, { src: 'i am a file' });
+
+		await copy(source, destination, { clobber: false });
+
+		expect(await readTree(destination)).toEqual({ src: 'i am a file', 'other.js': 'scaffold' });
+	});
+
 	it('recreates symlinks', async () => {
 		const source = await tmp();
 		const destination = await tmp();

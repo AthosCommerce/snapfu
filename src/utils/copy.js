@@ -53,6 +53,36 @@ export async function copy(source, destination, options = {}) {
 		await fs.symlink(await fs.readlink(sourcePath), targetPath);
 	};
 
+	// ensures nothing other than a real directory sits at a directory target before descending into it,
+	// so an existing file cannot block the copy and an existing symlink cannot redirect writes elsewhere
+	// returns false when the subtree should be skipped
+	const clearDirectoryTarget = async (targetPath) => {
+		let existing;
+		try {
+			existing = await fs.lstat(targetPath);
+		} catch (err) {
+			if (err.code === 'ENOENT') return true;
+			throw err;
+		}
+
+		if (existing.isDirectory()) return true;
+
+		if (clobber) {
+			// replace the file or symlink with a real directory
+			await fs.rm(targetPath, { force: true });
+			return true;
+		}
+
+		if (existing.isSymbolicLink()) {
+			// not clobbering - leave an existing symlinked directory in place and copy through it
+			const linked = await fs.stat(targetPath).catch(() => null);
+			return Boolean(linked && linked.isDirectory());
+		}
+
+		// a file is in the way and cannot be overwritten
+		return false;
+	};
+
 	const copyEntry = async (sourcePath) => {
 		if (options.filter && !options.filter(sourcePath)) return;
 
@@ -60,6 +90,9 @@ export async function copy(source, destination, options = {}) {
 		const targetPath = path.join(destinationRoot, path.relative(sourceRoot, sourcePath));
 
 		if (stats.isDirectory()) {
+			// the destination root is used as given - only entries within it are inspected
+			if (sourcePath !== sourceRoot && !(await clearDirectoryTarget(targetPath))) return;
+
 			await fs.mkdir(targetPath, { recursive: true, mode: stats.mode });
 			for (const entry of await fs.readdir(sourcePath)) {
 				await copyEntry(path.join(sourcePath, entry));
