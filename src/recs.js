@@ -522,10 +522,18 @@ export function validateTemplate(template) {
 					invalidParam.push(`template paramater '${detail}' must be a string with a value`);
 				}
 				break;
-			case 'parameters':
-				// parameter 'type' is required when the template specifies a version
-				invalidParam.push(...validateTemplateParameters(template.details[detail], detail, { requireType: 'version' in template.details }));
+			case 'parameters': {
+				const parameters = template.details[detail];
+				const versioned = 'version' in template.details;
+				if (!versioned && Array.isArray(parameters) && !parameters.some((parameter) => parameter && 'type' in parameter)) {
+					// untyped parameters of unversioned templates keep the format templates had before types existed
+					invalidParam.push(...validateUntypedParameters(parameters, detail));
+				} else {
+					// parameter 'type' is required when the template specifies a version
+					invalidParam.push(...validateTemplateParameters(parameters, detail, { requireType: versioned }));
+				}
 				break;
+			}
 			default:
 				invalidParam.push(`unknown template parameter '${detail}' should be removed`);
 				break;
@@ -540,6 +548,24 @@ export function validateTemplate(template) {
 		exit(1);
 	}
 	return true;
+}
+
+// every value must be a string, and name and label must have a value (smc-config-api rejects them otherwise)
+function validateUntypedParameters(parameters, detail) {
+	const invalidParam = [];
+	parameters.forEach((parameter, i) => {
+		['name', 'label'].forEach((field) => {
+			if (!parameter[field]) {
+				invalidParam.push(`template paramater '${detail}[${i}].${field}' is required`);
+			}
+		});
+		Object.keys(parameter).forEach((key) => {
+			if (typeof parameter[key] !== 'string') {
+				invalidParam.push(`template paramater '${detail}[${i}].${key}' must be a string`);
+			}
+		});
+	});
+	return invalidParam;
 }
 
 export function generateTemplateSettings({ name, description, type }) {

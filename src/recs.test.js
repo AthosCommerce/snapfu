@@ -288,6 +288,139 @@ describe('validateTemplate function', () => {
 		mockConsoleLog.mockRestore();
 	});
 
+	it('valid template without version - untyped parameter with an empty defaultValue', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+		const template = {
+			details: {
+				...mockTemplateSettings,
+				parameters: [{ name: 'title', label: 'Title', description: 'text used for the heading', defaultValue: '' }],
+			},
+		};
+		const result = validateTemplate(template);
+		expect(result).toBe(true);
+
+		expect(mockConsoleLog).toHaveBeenCalledTimes(0);
+		mockConsoleLog.mockRestore();
+	});
+
+	it('valid template without version - untyped parameters with a missing or empty description', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+		const template = {
+			details: {
+				...mockTemplateSettings,
+				parameters: [
+					{ name: 'title', label: 'Title', defaultValue: 'Recommended Products' },
+					{ name: 'subtitle', label: 'Subtitle', description: '', defaultValue: '' },
+				],
+			},
+		};
+		const result = validateTemplate(template);
+		expect(result).toBe(true);
+
+		expect(mockConsoleLog).toHaveBeenCalledTimes(0);
+		mockConsoleLog.mockRestore();
+	});
+
+	it('invalid template without version - untyped parameter with a non-string value', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+		const mockExit = jest.spyOn(process, 'exit').mockImplementation((number) => {
+			throw new Error('process.exit: ' + number);
+		});
+
+		const template = {
+			details: {
+				...mockTemplateSettings,
+				parameters: [{ name: 'limit', label: 'Limit', description: 'products to show', defaultValue: 5 }],
+			},
+		};
+
+		expect(() => {
+			validateTemplate(template);
+		}).toThrow();
+
+		expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining(`template paramater 'parameters[0].defaultValue' must be a string`));
+		mockConsoleLog.mockRestore();
+
+		expect(mockExit).toHaveBeenCalledWith(1);
+		mockExit.mockRestore();
+	});
+
+	it('invalid template without version - untyped parameter without a label', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+		const mockExit = jest.spyOn(process, 'exit').mockImplementation((number) => {
+			throw new Error('process.exit: ' + number);
+		});
+
+		const template = {
+			details: {
+				...mockTemplateSettings,
+				parameters: [{ name: 'title', description: 'text used for the heading', defaultValue: '' }],
+			},
+		};
+
+		expect(() => {
+			validateTemplate(template);
+		}).toThrow();
+
+		expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining(`template paramater 'parameters[0].label' is required`));
+		mockConsoleLog.mockRestore();
+
+		expect(mockExit).toHaveBeenCalledWith(1);
+		mockExit.mockRestore();
+	});
+
+	it('invalid template with version - parameter with an empty defaultValue', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+		const mockExit = jest.spyOn(process, 'exit').mockImplementation((number) => {
+			throw new Error('process.exit: ' + number);
+		});
+
+		const template = {
+			details: {
+				...mockVersionedTemplateSettings,
+				parameters: [{ name: 'title', type: 'string', label: 'Title', description: 'text used for the heading', defaultValue: '' }],
+			},
+		};
+
+		expect(() => {
+			validateTemplate(template);
+		}).toThrow();
+
+		expect(mockConsoleLog).toHaveBeenCalledWith(
+			expect.stringContaining(`template paramater 'parameters[0].defaultValue' must be a string with a value`)
+		);
+		mockConsoleLog.mockRestore();
+
+		expect(mockExit).toHaveBeenCalledWith(1);
+		mockExit.mockRestore();
+	});
+
+	it('invalid template without version - typed parameter without a description', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+		const mockExit = jest.spyOn(process, 'exit').mockImplementation((number) => {
+			throw new Error('process.exit: ' + number);
+		});
+
+		const template = {
+			details: {
+				...mockTemplateSettings,
+				parameters: [{ name: 'limit', type: 'integer', label: 'Limit', defaultValue: '5' }],
+			},
+		};
+
+		expect(() => {
+			validateTemplate(template);
+		}).toThrow();
+
+		expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining(`template paramater 'parameters[0].description' is required`));
+		mockConsoleLog.mockRestore();
+
+		expect(mockExit).toHaveBeenCalledWith(1);
+		mockExit.mockRestore();
+	});
+
 	it('invalid template - missing required keys', async () => {
 		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
 		const mockExit = jest.spyOn(process, 'exit').mockImplementation((number) => {
