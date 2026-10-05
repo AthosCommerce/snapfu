@@ -156,6 +156,8 @@ snapfu help [<command>]
 
 This tool integrates with the Athos Commerce build and deploy process. In order to take advantage of this you must have access to the `snap-implementations` GitHub organization and select it during init command. (Requires login & invitation to the organization upon request).
 
+When a GitHub repository is created during `init`, the scaffold is committed and pushed to the `production` branch before branch protection is applied. This means `production` starts out matching the scaffold, and your first pull request will only contain your own changes.
+
 The tool uses GitHub actions to copy files to our AWS S3 backed CDN (Cloudfront).
 
 When you commit to the main branch (production), the github action will deploy all the files that build into `./dist` to a publicly readable S3 bucket which can be accessed at the following URLs:
