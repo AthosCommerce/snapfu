@@ -125,7 +125,7 @@ describe('pushScaffold', () => {
 		const result = await pushScaffold({ dev: false }, { dir: local, scaffold: 'snapfu-scaffold-preact' });
 
 		expect(result).toBe(true);
-		expect(await remoteLog(remote)).toEqual(['Initialized from snapfu-scaffold-preact', 'Initial commit']);
+		expect(await remoteLog(remote)).toEqual(['Initialized from snapfu-scaffold-preact - [skip actions]', 'Initial commit']);
 
 		const { stdout } = await commandOutput(`git ls-tree --name-only ${DEFAULT_BRANCH}`, remote);
 		expect(stdout.trim().split('\n').sort()).toEqual(['README.md', 'package.json']);
