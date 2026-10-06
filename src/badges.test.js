@@ -248,6 +248,36 @@ describe('validateTemplate function', () => {
 		expect(mockExit).toHaveBeenCalledWith(1);
 		mockExit.mockRestore();
 	});
+
+	it('invalid template - parameters require a type', async () => {
+		const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {});
+		const mockExit = jest.spyOn(process, 'exit').mockImplementation((number) => {
+			throw new Error('process.exit: ' + number);
+		});
+
+		const template = {
+			details: {
+				...mockTemplateSettings,
+				parameters: [
+					{
+						name: 'title',
+						label: 'Title',
+						description: 'text used for the heading',
+					},
+				],
+			},
+		};
+
+		expect(() => {
+			validateTemplate(template, JSON.stringify(mockLocations));
+		}).toThrow();
+
+		expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining(`template paramater 'parameters[0].type' is required`));
+		mockConsoleLog.mockRestore();
+
+		expect(mockExit).toHaveBeenCalledWith(1);
+		mockExit.mockRestore();
+	});
 });
 
 describe('generateTemplateSettings function', () => {
