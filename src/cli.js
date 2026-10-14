@@ -32,6 +32,7 @@ async function parseArgumentsIntoOptions(rawArgs) {
 				'--dev': Boolean,
 				'--zone': String,
 				'--ci': Boolean,
+				'--scaffold': Boolean,
 				'--updater': Boolean,
 				'--secret-key': String,
 				'--secrets-ci': String,
@@ -47,7 +48,9 @@ async function parseArgumentsIntoOptions(rawArgs) {
 
 	const command = args._[0];
 
-	const context = await getContext(process.cwd());
+	// scaffold projects contain placeholder siteId values - skip siteId validation when patching them
+	const skipSiteIdValidation = Boolean(args['--scaffold']) && command === 'patch';
+	const context = await getContext(process.cwd(), { skipSiteIdValidation });
 
 	// exit on commands that require a Snap project
 	const orgRequiredCommands = ['badge', 'badges', 'recs', 'recommendation', 'recommendations', 'secret', 'secrets', 'patch'];
@@ -212,6 +215,7 @@ jobs:
 			secretKey,
 			secrets: args['--secrets-ci'],
 			ci: args['--ci'],
+			scaffold: args['--scaffold'],
 			updater: args['--updater'],
 		},
 		context,

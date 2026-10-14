@@ -6,10 +6,10 @@ import chalk from 'chalk';
 import { auth } from './login.js';
 import { commandOutput } from './utils/index.js';
 
-export async function getContext(dir) {
+export async function getContext(dir, options = {}) {
 	let project, integration, branch, branchList, remote, organization, name;
 	try {
-		project = await getProject(dir);
+		project = await getProject(dir, options);
 		integration = project?.packageJSON?.athos || project?.packageJSON?.searchspring;
 	} catch (err) {
 		// do nothing
@@ -60,7 +60,9 @@ export async function getContext(dir) {
 	};
 }
 
-export async function getProject(dir) {
+export async function getProject(dir, options = {}) {
+	const { skipSiteIdValidation } = options;
+
 	try {
 		const [packageFile] = await getClosest(dir || process.cwd(), 'package.json');
 
@@ -126,6 +128,10 @@ export async function getProject(dir) {
 			}
 
 			const siteId = parsedContents[projectDetails.org].siteId;
+			if (skipSiteIdValidation) {
+				// scaffold projects contain placeholder siteId values that are not expected to be valid
+				return projectDetails;
+			}
 			if (siteId && typeof siteId === 'string') {
 				const isValid =
 					projectDetails.org === 'athos'

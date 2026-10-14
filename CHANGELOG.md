@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.17.2](https://github.com/AthosCommerce/snapfu/compare/v1.17.1...v1.17.2) (2026-10-05)
+
+### [1.17.1](https://github.com/AthosCommerce/snapfu/compare/v1.17.0...v1.17.1) (2026-07-27)
+
+
+### Bug Fixes
+
+* allowing scaffold flag to work in other commands ([a9d5582](https://github.com/AthosCommerce/snapfu/commit/a9d5582f63a776b42a949232c6b004f21438af64))
+
+## [1.17.0](https://github.com/AthosCommerce/snapfu/compare/v1.16.1...v1.17.0) (2026-07-27)
+
+
+### Features
+
+* add --scaffold flag to skip siteId validation when patching scaffold projects ([3564f31](https://github.com/AthosCommerce/snapfu/commit/3564f3103bab5dbc55a232484d68a97657538cf2))
+
+
+### Bug Fixes
+
+* restrict --scaffold siteId validation skip to `patch apply` and document --ci in help ([783b23b](https://github.com/AthosCommerce/snapfu/commit/783b23bb99a37e1216d31cfa76dce242670cdf33))
+
 ### [1.16.1](https://github.com/AthosCommerce/snapfu/compare/v1.16.0...v1.16.1) (2026-04-22)
 
 

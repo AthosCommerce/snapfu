@@ -457,17 +457,12 @@ export const init = async (options) => {
 			console.log(`${chalk.cyan(scaffold.http)}\n`);
 		}
 
-		// waiting here due to copyPromise function resolving before scaffold is actually copied
-		// TODO: look into why ncp does not like our filtering (does not resolve promise in callback)
-		// wait...
-		await wait(1000);
-
 		// save secretKey mapping to creds.json
 		if (answers.secretKey) {
 			await auth.saveSecretKey(answers.secretKey, answers.siteId, options.config.snapfuDir);
 		}
 
-		// Set repository secret and branch protection
+		// Set repository secret, push scaffold, then set branch protection (order matters)
 		if (useGitHubRepo && isLoggedIn) {
 			if (answers.secretKey) {
 				await setRepoSecret(options, {
@@ -479,7 +474,28 @@ export const init = async (options) => {
 				});
 			}
 
-			await setBranchProtection(options, { organization: answers.organization, name: answers.name });
+			// push the scaffold to the default branch BEFORE branch protection is applied (direct pushes are blocked afterwards)
+			// the secret is set first so that the workflow triggered by this push has access to it
+			if (!options.dev && answers.organization === 'snap-implementations') {
+				const pushed = await pushScaffold(options, { dir, scaffold: answers.scaffold });
+
+				await setBranchProtection(options, { organization: answers.organization, name: answers.name });
+
+				if (!pushed && !options.dev) {
+					// branch protection may now be in place, so recovery must go through a branch and pull request
+					console.log(
+						chalk.yellow(
+							`The scaffold was not pushed to ${DEFAULT_BRANCH}. To recover, push it via a branch and pull request from within ${folderName}:`
+						)
+					);
+					console.log(
+						chalk.grey(
+							`\n\tgit checkout -b development\n\tgit add -A && git commit -m "Initialized from ${answers.scaffold}"\n\tgit push -u origin development\n`
+						)
+					);
+					console.log(chalk.yellow(`Then open a pull request from development into ${DEFAULT_BRANCH}.\n`));
+				}
+			}
 		}
 
 		if (dir != cwd()) {
@@ -504,6 +520,41 @@ export const init = async (options) => {
 	} catch (err) {
 		console.log(chalk.red(err));
 		exit(1);
+	}
+};
+
+export const pushScaffold = async function (options, details) {
+	const { dir, scaffold } = details;
+	const commitMessage = `Initialized from ${scaffold} - [skip actions]`;
+
+	if (options.dev) {
+		console.log(chalk.yellow('skipping push of scaffold to remote repository'));
+		console.log(); // new line spacing
+		return false;
+	}
+
+	console.log(`Committing and pushing scaffold to ${DEFAULT_BRANCH}...`);
+
+	try {
+		const { stdout } = await commandOutput('git status --porcelain', dir);
+		if (!stdout.trim()) {
+			console.log(chalk.yellow(`nothing to commit - ${DEFAULT_BRANCH} is already up to date`));
+			console.log(); // new line spacing
+			return true;
+		}
+
+		await commandOutput('git add -A', dir);
+		await commandOutput(`git commit -m "${commitMessage}"`, dir);
+		await commandOutput(`git push -u origin ${DEFAULT_BRANCH}`, dir);
+
+		console.log(chalk.green(`pushed scaffold to ${DEFAULT_BRANCH}`));
+		console.log(); // new line spacing
+		return true;
+	} catch (err) {
+		console.log(chalk.red(`failed to push scaffold to ${DEFAULT_BRANCH}`));
+		console.log(chalk.red(err.stderr || err.message || err));
+		console.log(); // new line spacing
+		return false;
 	}
 };
 

@@ -90,8 +90,12 @@ snapfu patch <command> <args> [--options]
 **Subcommands:**
 
 - `apply` - Apply patch version (version or latest)
+  - `--ci` - Run without interactive prompts
+  - `--scaffold` - Patch a scaffold project (skips siteId validation)
 - `list` - List available versions for project
+  - `--scaffold` - Target a scaffold project (skips siteId validation)
 - `fetch` - Fetch latest versions of patches
+  - `--scaffold` - Target a scaffold project (skips siteId validation)
 
 ### `login` - OAuth with GitHub
 
@@ -171,6 +175,8 @@ snapfu help [<command>]
 ## Deployment
 
 This tool integrates with the Athos Commerce build and deploy process. In order to take advantage of this you must have access to the `snap-implementations` GitHub organization and select it during init command. (Requires login & invitation to the organization upon request).
+
+When a GitHub repository is created during `init`, the scaffold is committed and pushed to the `production` branch before branch protection is applied. This means `production` starts out matching the scaffold, and your first pull request will only contain your own changes.
 
 The tool uses GitHub actions to copy files to our AWS S3 backed CDN (Cloudfront).
 

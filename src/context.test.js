@@ -161,4 +161,42 @@ describe('getContext function', () => {
 		expect(context).toHaveProperty('integration');
 		expect(context.project).toHaveProperty('version');
 	});
+	it('exits when the siteId is invalid', async () => {
+		const mockPackageJSON = {
+			athos: {
+				siteId: 'xxxxxx',
+				framework: 'preact',
+				platform: 'bigcommerce',
+				tags: ['finder'],
+			},
+		};
+		await fsp.writeFile(packagePath, JSON.stringify(mockPackageJSON));
+
+		const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
+
+		await getContext(projectDir);
+		expect(exitSpy).toHaveBeenCalledWith(1);
+
+		exitSpy.mockRestore();
+	});
+	it('does not validate the siteId when skipSiteIdValidation is used', async () => {
+		const mockPackageJSON = {
+			athos: {
+				siteId: 'xxxxxx',
+				framework: 'preact',
+				platform: 'bigcommerce',
+				tags: ['finder'],
+			},
+		};
+		await fsp.writeFile(packagePath, JSON.stringify(mockPackageJSON));
+
+		const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => {});
+
+		const context = await getContext(projectDir, { skipSiteIdValidation: true });
+		expect(exitSpy).not.toHaveBeenCalled();
+		expect(context.project.org).toBe('athos');
+		expect(context.integration.siteId).toBe('xxxxxx');
+
+		exitSpy.mockRestore();
+	});
 });

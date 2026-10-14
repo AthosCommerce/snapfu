@@ -1,16 +1,110 @@
-import ncp from 'ncp';
+import { createReadStream, createWriteStream, promises as fs } from 'fs';
+import { finished, pipeline } from 'stream/promises';
+import path from 'path';
 import replaceStream from 'replacestream';
 
-export function copy(source, destination, options) {
-	return new Promise((resolutionFunc, rejectionFunc) => {
-		// ncp can be used to modify the files while copying - see https://www.npmjs.com/package/ncp
-		ncp(source, destination, options, function (err) {
-			if (err) {
-				rejectionFunc(err);
+/**
+ * Recursively copies `source` into `destination`, resolving only once every file has been fully written.
+ */
+export async function copy(source, destination, options = {}) {
+	const clobber = options.clobber !== false;
+	const sourceRoot = path.resolve(source);
+	const destinationRoot = path.resolve(destination);
+
+	const exists = async (target) => {
+		try {
+			await fs.lstat(target);
+			return true;
+		} catch (err) {
+			if (err.code === 'ENOENT') return false;
+			throw err;
+		}
+	};
+
+	const copyFile = async (sourcePath, targetPath, stats) => {
+		if (options.rename) {
+			targetPath = options.rename(targetPath);
+		}
+
+		if (await exists(targetPath)) {
+			if (!clobber) return;
+			await fs.rm(targetPath, { force: true });
+		}
+
+		const read = createReadStream(sourcePath);
+		const write = createWriteStream(targetPath, { mode: stats.mode });
+
+		if (options.transform) {
+			const file = { name: sourcePath, mode: stats.mode, mtime: stats.mtime, atime: stats.atime };
+			await options.transform(read, write, file);
+			// the transform is responsible for piping - wait for both ends to fully complete
+			await Promise.all([finished(read), finished(write)]);
+		} else {
+			await pipeline(read, write);
+		}
+	};
+
+	const copyLink = async (sourcePath, targetPath) => {
+		if (await exists(targetPath)) {
+			if (!clobber) return;
+			await fs.rm(targetPath, { force: true });
+		}
+
+		await fs.symlink(await fs.readlink(sourcePath), targetPath);
+	};
+
+	// ensures nothing other than a real directory sits at a directory target before descending into it,
+	// so an existing file cannot block the copy and an existing symlink cannot redirect writes elsewhere
+	// returns false when the subtree should be skipped
+	const clearDirectoryTarget = async (targetPath) => {
+		let existing;
+		try {
+			existing = await fs.lstat(targetPath);
+		} catch (err) {
+			if (err.code === 'ENOENT') return true;
+			throw err;
+		}
+
+		if (existing.isDirectory()) return true;
+
+		if (clobber) {
+			// replace the file or symlink with a real directory
+			await fs.rm(targetPath, { force: true });
+			return true;
+		}
+
+		if (existing.isSymbolicLink()) {
+			// not clobbering - leave an existing symlinked directory in place and copy through it
+			const linked = await fs.stat(targetPath).catch(() => null);
+			return Boolean(linked && linked.isDirectory());
+		}
+
+		// a file is in the way and cannot be overwritten
+		return false;
+	};
+
+	const copyEntry = async (sourcePath) => {
+		if (options.filter && !options.filter(sourcePath)) return;
+
+		const stats = await fs.lstat(sourcePath);
+		const targetPath = path.join(destinationRoot, path.relative(sourceRoot, sourcePath));
+
+		if (stats.isDirectory()) {
+			// the destination root is used as given - only entries within it are inspected
+			if (sourcePath !== sourceRoot && !(await clearDirectoryTarget(targetPath))) return;
+
+			await fs.mkdir(targetPath, { recursive: true, mode: stats.mode });
+			for (const entry of await fs.readdir(sourcePath)) {
+				await copyEntry(path.join(sourcePath, entry));
 			}
-			resolutionFunc();
-		});
-	});
+		} else if (stats.isSymbolicLink()) {
+			await copyLink(sourcePath, targetPath);
+		} else if (stats.isFile()) {
+			await copyFile(sourcePath, targetPath, stats);
+		}
+	};
+
+	await copyEntry(sourceRoot);
 }
 
 export const copyTransform = function (read, write, variables, file) {
