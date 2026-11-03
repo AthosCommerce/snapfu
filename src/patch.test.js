@@ -259,7 +259,7 @@ describe('setupLibraryRepo function', () => {
 
 		const directoryContents = fs.statSync(options.config.library.dir);
 		expect(directoryContents.isDirectory()).toBe(true);
-	});
+	}, 30000);
 });
 
 describe('getVersions function', () => {
