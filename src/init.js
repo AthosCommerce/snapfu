@@ -14,6 +14,8 @@ import { ConfigApi } from './services/ConfigApi.js';
 import YAML from 'yaml';
 
 export const DEFAULT_BRANCH = 'production';
+// snap-implementations/snap-bots: the updater's machine users merge their own PRs, so they bypass the Production ruleset (hardcoded since the login token has no read:org scope to look it up)
+export const SNAP_BOTS_TEAM_ID = 18920884;
 const TEMPLATES_SCAFFOLD_NAME_IDENTIFIER = '-templates';
 
 export const createDir = (dir) => {
@@ -581,6 +583,7 @@ export const setBranchProtection = async function (options, details) {
 				name: 'Production',
 				target: 'branch',
 				enforcement: 'active',
+				bypass_actors: [{ actor_id: SNAP_BOTS_TEAM_ID, actor_type: 'Team', bypass_mode: 'always' }],
 				conditions: {
 					ref_name: {
 						exclude: [],
