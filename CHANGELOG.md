@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.17.3](https://github.com/AthosCommerce/snapfu/compare/v1.17.2...v1.17.3) (2026-11-03)
+
+
+### Bug Fixes
+
+* add bypass_actors to branch protection ruleset ([e219065](https://github.com/AthosCommerce/snapfu/commit/e2190653b5bcf0a581a970157cb6549ee21cc584))
+
 ### [1.17.2](https://github.com/AthosCommerce/snapfu/compare/v1.17.1...v1.17.2) (2026-10-05)
 
 ### [1.17.1](https://github.com/AthosCommerce/snapfu/compare/v1.17.0...v1.17.1) (2026-07-27)
