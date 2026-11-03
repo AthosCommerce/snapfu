@@ -1,11 +1,14 @@
-import { createDir, pushScaffold, DEFAULT_BRANCH } from './init';
+import { createDir, pushScaffold, setBranchProtection, DEFAULT_BRANCH, SNAP_BOTS_TEAM_ID } from './init';
 import { copyTransform, commandOutput } from './utils';
+import { Octokit } from '@octokit/rest';
 import os from 'os';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fail } from 'assert';
 import { Readable } from 'stream';
 import MemoryStream from 'memorystream';
+
+jest.mock('@octokit/rest', () => ({ Octokit: jest.fn() }));
 
 beforeEach(async () => {});
 
@@ -152,5 +155,32 @@ describe('pushScaffold', () => {
 
 		expect(result).toBe(false);
 		expect(await remoteLog(remote)).toEqual(['Initial commit']);
+	});
+});
+
+describe('setBranchProtection', () => {
+	let logSpy;
+	let createRepoRuleset;
+
+	beforeEach(() => {
+		logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+		createRepoRuleset = jest.fn().mockResolvedValue({ status: 201 });
+		Octokit.mockImplementation(() => ({ rest: { repos: { createRepoRuleset } } }));
+	});
+
+	afterEach(() => {
+		logSpy.mockRestore();
+	});
+
+	it('lets the Snap Bots team bypass the Production ruleset', async () => {
+		await setBranchProtection({ user: { token: 'token' } }, { organization: 'snap-implementations', name: 'test.one.test' });
+
+		expect(createRepoRuleset).toHaveBeenCalledTimes(1);
+		expect(createRepoRuleset.mock.calls[0][0]).toMatchObject({
+			owner: 'snap-implementations',
+			repo: 'test.one.test',
+			name: 'Production',
+			bypass_actors: [{ actor_id: SNAP_BOTS_TEAM_ID, actor_type: 'Team', bypass_mode: 'always' }],
+		});
 	});
 });
